@@ -82,5 +82,17 @@ namespace FileCreator.Properties {
                 this["UnitTestPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SharedKernelPath {
+            get {
+                return ((string)(this["SharedKernelPath"]));
+            }
+            set {
+                this["SharedKernelPath"] = value;
+            }
+        }
     }
 }

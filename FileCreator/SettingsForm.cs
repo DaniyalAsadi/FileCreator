@@ -59,7 +59,8 @@ public partial class SettingsForm : Form
             Properties.Settings.Default.UnitTestPath = unitTestsFolder;
             string functionalTestFolder = ExtractFolder("FunctionalTests", lines, solutionFolder, solutionName);
             Properties.Settings.Default.FunctionalTestPath = functionalTestFolder;
-
+            string sharedKernelFolder = ExtractFolder("SharedKernel", lines, solutionFolder, solutionName);
+            Properties.Settings.Default.SharedKernelPath = sharedKernelFolder;
             Properties.Settings.Default.Save();
 
             MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);

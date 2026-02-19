@@ -9,6 +9,7 @@ public partial class FileCreatorForm : Form
     private string _webBasePath = string.Empty;
     private string _functionalTestsBasePath = string.Empty;
     private string _unitTestsBasePath = string.Empty;
+    private string _sharedKerbalTestsBasePath = string.Empty;   
     public FileCreatorForm()
     {
         InitializeComponent();
@@ -25,6 +26,7 @@ public partial class FileCreatorForm : Form
         _webBasePath = Properties.Settings.Default.WebPath;
         _functionalTestsBasePath = Properties.Settings.Default.FunctionalTestPath;
         _unitTestsBasePath = Properties.Settings.Default.UnitTestPath;
+        _sharedKerbalTestsBasePath = Properties.Settings.Default.SharedKernelPath;
 
         btnGenerate.Enabled =
             !string.IsNullOrWhiteSpace(_useCasesBasePath) ||
@@ -118,7 +120,7 @@ public partial class FileCreatorForm : Form
 
 
             ;
-            var apiRoutePath = FindApiRoutes(_webBasePath);
+            var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
             ApiRoutesUpdater.Update(
                 apiRoutePath,
                 group.Resource,
