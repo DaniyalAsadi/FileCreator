@@ -1,6 +1,6 @@
 ﻿using Humanizer;
 
-namespace FileCreator;
+namespace FileCreator.Core;
 
 public sealed class GroupName
 {

@@ -6,7 +6,7 @@ using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 
-namespace FileCreator.Helpers;
+namespace FileCreator.Core.Helpers;
 
 public static class RoslynHelpers
 {

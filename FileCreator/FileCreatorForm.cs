@@ -1,5 +1,5 @@
-using FileCreator.Helpers;
-
+using FileCreator.Core;
+using FileCreator.Core.Rewriter;
 namespace FileCreator;
 
 public partial class FileCreatorForm : Form

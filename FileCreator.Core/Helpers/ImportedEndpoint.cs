@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FileCreator.Helpers;
+namespace FileCreator.Core.Helpers;
 
 public sealed class ImportedEndpoint
 {

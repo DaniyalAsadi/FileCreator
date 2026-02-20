@@ -1,4 +1,4 @@
-﻿namespace FileCreator;
+﻿namespace FileCreator.Core;
 
 public enum RequestType
 {

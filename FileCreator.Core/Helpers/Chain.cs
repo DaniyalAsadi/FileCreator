@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-namespace FileCreator.Helpers;
+namespace FileCreator.Core.Helpers;
 
 public sealed class Chain
 {

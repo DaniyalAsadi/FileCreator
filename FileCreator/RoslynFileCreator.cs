@@ -1,4 +1,5 @@
-﻿using FileCreator.Generators;
+﻿using FileCreator.Core;
+using FileCreator.Core.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -60,7 +61,7 @@ public class RoslynFileCreator(
                 RequestType,
                 HasResponse,
                 ResponseType));
-        // ------------------------     ------------------------ 
+        // ------------------------ MediatorRequestHandlerGenerator ------------------------ 
         WriteIfNotExists(Path.Combine(
                 useCasePath,
                 $"{UsecaseName}{RequestType}Handler.cs"),
@@ -75,7 +76,7 @@ public class RoslynFileCreator(
         {
             if (ResponseType == ResponseType.PagedList)
             {
-                // ------------------------     ------------------------ 
+                // ------------------------ MediatorRequestFiltersGenerator ------------------------ 
                 WriteIfNotExists(Path.Combine(
                     useCasePath,
                 $"{UsecaseName}{RequestType}Filter.cs"),
@@ -85,7 +86,7 @@ public class RoslynFileCreator(
                     RequestType));
             }
 
-            // ------------------------     ------------------------ 
+            // ------------------------ MediatorRequestResponseGenerator ------------------------ 
             WriteIfNotExists(Path.Combine(
                 useCasePath,
                 $"{UsecaseName}{RequestType}Response.cs"),
@@ -94,8 +95,28 @@ public class RoslynFileCreator(
                     UsecaseName,
                     RequestType));
         }
+        if (RequestType == RequestType.Query)
+        {
+            WriteIfNotExists(Path.Combine(useCasePath,
+                $"{UsecaseName}{RequestType}Specification"),
+                MediatorRequestSpecificationGenerator.Generate(
+                usecaseFolderNameSpace,
+                    UsecaseName,
+                    RequestType));
 
-        WriteIfNotExists(Path.Combine(endpointPath,
+
+            WriteIfNotExists(Path.Combine(useCasePath,
+                $"I{UsecaseName}Service.cs"),
+                MediatorRequestServiceGenerator.Generate(
+                    usecaseFolderNameSpace,
+                    UsecaseName,
+                    RequestType,
+                    ResponseType));
+        }
+
+
+            // ------------------------ EndpointGenerator ------------------------ 
+            WriteIfNotExists(Path.Combine(endpointPath,
             $"{UsecaseName}.cs"),
                 EndpointGenerator.Generate(
                 webFolderNameSpace,
@@ -109,6 +130,7 @@ public class RoslynFileCreator(
                 ResponseType));
         if (HasRequest)
         {
+            // ------------------------ EndpointRequestGenerator ------------------------ 
             WriteIfNotExists(
                 Path.Combine(endpointPath,
                 $"{UsecaseName}Request.cs"),
@@ -119,11 +141,14 @@ public class RoslynFileCreator(
                     RequestType,
                     HasResponse,
                     ResponseType));
+            // ------------------------ EndpointRequestValidatorGenerator ------------------------ 
+
             WriteIfNotExists(
                 Path.Combine(webFolderNameSpace,
                 $"{UsecaseName}Validator.cs"),
                 EndpointRequestValidatorGenerator.Generate(webFolderNameSpace, UsecaseName));
         }
+        // ------------------------ EndpointTestGenerator ------------------------ 
         WriteIfNotExists(
             Path.Combine(functionalPath,
             $"{UsecaseName}Tests.cs"),
@@ -137,10 +162,9 @@ public class RoslynFileCreator(
                 HasResponse,
                 ResponseType,
                 HttpVerb));
-
+        // ------------------------ MediatorRequestHandlerTestGenerator ------------------------ 
         WriteIfNotExists(
-            Path.Combine(
-                unitTestPath,
+            Path.Combine(unitTestPath,
             $"{UsecaseName}{RequestType}HandlerTests.cs"),
             MediatorRequestHandlerTestGenerator.Generate(
                 unitTestsFolderNameSpace,

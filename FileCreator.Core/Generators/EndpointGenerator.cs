@@ -1,11 +1,12 @@
-﻿using FileCreator.Helpers;
+﻿using FileCreator.Core;
+using FileCreator.Core.Helpers;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace FileCreator.Generators;
+namespace FileCreator.Core.Generators;
 
-internal class EndpointGenerator
+public class EndpointGenerator
 {
     public static CompilationUnitSyntax Generate(
     string ns,

@@ -1,5 +1,4 @@
-﻿using FileCreator.Helpers;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
@@ -7,10 +6,12 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using Humanizer;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using FileCreator.Core;
+using FileCreator.Core.Helpers;
 
-namespace FileCreator.Generators;
+namespace FileCreator.Core.Generators;
 
-internal class EndpointTestGenerator
+public class EndpointTestGenerator
 {
     public static CompilationUnitSyntax Generate(
         string ns,
