@@ -55,6 +55,8 @@ partial class FileCreatorForm
         menuStrip.Name = "menuStrip";
         menuStrip.Size = new Size(455, 24);
         menuStrip.TabIndex = 0;
+        menuStrip.BackColor = Color.FromArgb(45, 45, 48);
+        menuStrip.ForeColor = Color.Gainsboro;
         // 
         // menuFile
         // 
@@ -62,6 +64,8 @@ partial class FileCreatorForm
         menuFile.Name = "menuFile";
         menuFile.Size = new Size(37, 20);
         menuFile.Text = "File";
+        menuFile.BackColor = Color.FromArgb(45, 45, 48);
+        menuFile.ForeColor = Color.Gainsboro;
         // 
         // menuSettings
         // 
@@ -84,6 +88,9 @@ partial class FileCreatorForm
         txtUseCaseGroup.PlaceholderText = "Use Case Group";
         txtUseCaseGroup.Size = new Size(200, 23);
         txtUseCaseGroup.TabIndex = 1;
+        txtUseCaseGroup.ForeColor = Color.Gainsboro;
+        txtUseCaseGroup.BackColor = Color.FromArgb(45, 45, 48);
+        txtUseCaseGroup.BorderStyle = BorderStyle.FixedSingle;
         // 
         // txtUseCaseName
         // 
@@ -92,6 +99,9 @@ partial class FileCreatorForm
         txtUseCaseName.PlaceholderText = "Use Case Name";
         txtUseCaseName.Size = new Size(220, 23);
         txtUseCaseName.TabIndex = 2;
+        txtUseCaseName.ForeColor = Color.Gainsboro;
+        txtUseCaseName.BackColor = Color.FromArgb(45, 45, 48);
+        txtUseCaseName.BorderStyle = BorderStyle.FixedSingle;
         // 
         // cmbType
         // 
@@ -102,6 +112,9 @@ partial class FileCreatorForm
         cmbType.Size = new Size(121, 23);
         cmbType.SelectedIndex = 0;
         cmbType.TabIndex = 3;
+        cmbType.ForeColor = Color.Gainsboro;
+        cmbType.BackColor = Color.FromArgb(45, 45, 48);
+        cmbType.FlatStyle = FlatStyle.Flat;
         cmbType.SelectedIndexChanged += CmbType_SelectedIndexChanged;
         // 
         // chkHasRequest
@@ -112,6 +125,8 @@ partial class FileCreatorForm
         chkHasRequest.Name = "chkHasRequest";
         chkHasRequest.Size = new Size(104, 24);
         chkHasRequest.TabIndex = 4;
+        chkHasRequest.ForeColor = Color.Gainsboro;
+        chkHasRequest.BackColor = Color.FromArgb(30, 30, 30);
         chkHasRequest.Text = "Request";
         // 
         // chkHasResponse
@@ -123,6 +138,8 @@ partial class FileCreatorForm
         chkHasResponse.Size = new Size(104, 24);
         chkHasResponse.TabIndex = 5;
         chkHasResponse.Text = "Response";
+        chkHasResponse.ForeColor = Color.Gainsboro;
+        chkHasResponse.BackColor = Color.FromArgb(30, 30, 30);
         chkHasResponse.CheckedChanged += ChkHasResponse_CheckedChanged;
         // 
         // cmbVerb
@@ -133,6 +150,9 @@ partial class FileCreatorForm
         cmbVerb.Name = "cmbVerb";
         cmbVerb.Size = new Size(121, 23);
         cmbVerb.TabIndex = 6;
+        cmbVerb.ForeColor = Color.Gainsboro;
+        cmbVerb.BackColor = Color.FromArgb(45, 45, 48);
+        cmbVerb.FlatStyle = FlatStyle.Flat;
         cmbVerb.SelectedIndex = 0;
         // 
         // txtRoute
@@ -142,6 +162,9 @@ partial class FileCreatorForm
         txtRoute.PlaceholderText = "tests/create";
         txtRoute.Size = new Size(124, 23);
         txtRoute.TabIndex = 7;
+        txtRoute.ForeColor = Color.Gainsboro;
+        txtRoute.BackColor = Color.FromArgb(45, 45, 48);
+        txtRoute.BorderStyle = BorderStyle.FixedSingle;
         // 
         // cmbResponseType
         // 
@@ -152,6 +175,9 @@ partial class FileCreatorForm
         cmbResponseType.Size = new Size(160, 23);
         cmbResponseType.TabIndex = 8;
         cmbResponseType.SelectedIndex = 0;
+        cmbResponseType.ForeColor = Color.Gainsboro;
+        cmbResponseType.BackColor = Color.FromArgb(45, 45, 48);
+        cmbResponseType.FlatStyle = FlatStyle.Flat;
         cmbResponseType.Enabled = false;
         cmbResponseType.Visible = true;
         // 
@@ -163,12 +189,12 @@ partial class FileCreatorForm
         btnGenerate.TabIndex = 9;
         btnGenerate.Text = "Generate UseCase + Endpoint Files";
         btnGenerate.Click += BtnGenerate_Click;
-        
+        btnGenerate.ForeColor = Color.White;
+        btnGenerate.BackColor = Color.FromArgb(0, 122, 204);
+        btnGenerate.FlatStyle = FlatStyle.Flat;
         // 
         // FileCreatorForm
         // 
-        AutoScaleMode = AutoScaleMode.None;
-        ClientSize = new Size(455, 205);
         Controls.Add(menuStrip);
         Controls.Add(txtUseCaseGroup);
         Controls.Add(txtUseCaseName);
@@ -179,6 +205,11 @@ partial class FileCreatorForm
         Controls.Add(txtRoute);
         Controls.Add(btnGenerate);
         Controls.Add(cmbResponseType);
+        BackColor = Color.FromArgb(30, 30, 30);
+        ForeColor = Color.Gainsboro;
+        Font = new Font("Segoe UI", 9);
+        AutoScaleMode = AutoScaleMode.None;
+        ClientSize = new Size(455, 205);
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MainMenuStrip = menuStrip;
         MaximizeBox = false;
@@ -189,6 +220,7 @@ partial class FileCreatorForm
         ResumeLayout(false);
         PerformLayout();
         SetDefaultValue();
+
     }
     private void SetDefaultValue()
     {

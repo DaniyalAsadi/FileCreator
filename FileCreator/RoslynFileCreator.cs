@@ -17,6 +17,7 @@ public sealed class RoslynFileCreator(
     string webPath,
     string functionalTestPath,
     string unitTestPath,
+    string infrastructurePath,
     bool hasRequest,
     RequestType requestType,
     bool hasResponse,
@@ -27,6 +28,7 @@ public sealed class RoslynFileCreator(
     public GroupName GroupName { get; } = groupName;
     public string UsecaseName { get; } = usecaseName;
     public string UseCasePath { get; } = useCasePath;
+    public string InfrastructurePath { get; } = infrastructurePath;
     public string WebPath { get; } = webPath;
     public string FunctionalTestPath { get; } = functionalTestPath;
     public string UnitTestPath { get; } = unitTestPath;
@@ -65,10 +67,17 @@ public sealed class RoslynFileCreator(
             "ApiEndpoints",
             GroupName.Resource);
 
+        string infrastructureService = Path.Combine(
+            InfrastructurePath,
+            "Data",
+            "Queries",
+            GroupName.Feature);
+
         string usecaseNamespace = $"{SolutionName}.UseCases.{GroupName.Feature}.{(RequestType == RequestType.Command ? "Commands" : "Queries")}.{UsecaseName}";
         string webNamespace = $"{SolutionName}.Web.EndPoints.{GroupName.Resource}.{UsecaseName}";
         string functionalNamespace = $"{SolutionName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
         string unitTestNamespace = $"{SolutionName}.UnitTests.UseCases.{GroupName.Feature}";
+        string infrastructureNamespace = $"{SolutionName}.Infrastructure.Data.Queries.{GroupName.Feature}";
 
         // ------------------------ MediatorRequest ------------------------
         files.Add(new GeneratedFile(
@@ -107,6 +116,11 @@ public sealed class RoslynFileCreator(
             files.Add(new GeneratedFile(
                 Path.Combine(useCasePath, $"I{UsecaseName}Service.cs"),
                 MediatorRequestServiceGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
+            ));
+
+            files.Add(new GeneratedFile(
+                Path.Combine(infrastructureService, $"{UsecaseName}Service.cs"),
+                MediatorRequestServiceImplementationGenerator.Generate(infrastructureNamespace, usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
             ));
         }
 

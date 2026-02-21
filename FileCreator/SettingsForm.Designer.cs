@@ -44,13 +44,13 @@ partial class SettingsForm
         this.btnBrowse.Location = new System.Drawing.Point(320, 12);
         this.btnBrowse.Size = new System.Drawing.Size(75, 23);
         this.btnBrowse.Text = "Browse";
-        this.btnBrowse.Click += new EventHandler(this.btnBrowse_Click);
+        this.btnBrowse.Click += new EventHandler(this.BtnBrowse_Click);
 
         // btnSave
         this.btnSave.Location = new System.Drawing.Point(12, 50);
         this.btnSave.Size = new System.Drawing.Size(383, 30);
         this.btnSave.Text = "Save";
-        this.btnSave.Click += new EventHandler(this.btnSave_Click);
+        this.btnSave.Click += new EventHandler(this.BtnSave_Click);
 
         // SettingsForm
         this.ClientSize = new System.Drawing.Size(407, 100);

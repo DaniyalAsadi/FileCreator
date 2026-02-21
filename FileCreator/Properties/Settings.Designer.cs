@@ -94,5 +94,17 @@ namespace FileCreator.Properties {
                 this["SharedKernelPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string InfrastructurePath {
+            get {
+                return ((string)(this["InfrastructurePath"]));
+            }
+            set {
+                this["InfrastructurePath"] = value;
+            }
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace FileCreator.Core.Generators;
 
 public class MediatorRequestServiceGenerator
 {
-    public static CompilationUnitSyntax Generate(string ns, string useCaseName,RequestType type, ResponseType responseType)
+    public static CompilationUnitSyntax Generate(string ns, string useCaseName, RequestType type, ResponseType responseType)
     {
         var resultType = responseType switch
         {
@@ -24,34 +24,27 @@ public class MediatorRequestServiceGenerator
             ResponseType.PagedList => "ListAsync",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
-        ParameterListSyntax parameterList;
-        if (responseType is ResponseType.Single or ResponseType.IEnumerable)
-        {
-            parameterList = ParameterList(
-                [
-                Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
-                ]);
-
-
-        }
-        else
-        {
-            parameterList = ParameterList(
-                    [
-                    Parameter(Identifier("filter")).WithType(ParseTypeName($"{useCaseName}{type}Filter")),
-                    Parameter(Identifier("pagedRequest")).WithType(ParseTypeName("PagedRequest")),
+        ParameterListSyntax parameterList = 
+            responseType switch
+            {
+                ResponseType.Single or ResponseType.IEnumerable => 
+                ParameterList([
                     Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
-                    ]);
-        }
-
-
+                    ]),
+                ResponseType.PagedList => 
+                ParameterList([
+                        Parameter(Identifier("filter")).WithType(ParseTypeName($"{useCaseName}{type}Filter")),
+                        Parameter(Identifier("pagedRequest")).WithType(ParseTypeName("PagedRequest")),
+                        Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
+                        ]),
+                _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
+            };
         var method = MethodDeclaration(ParseTypeName(resultType),
             Identifier(identifierName))
             .AddModifiers(
                 Token(SyntaxKind.PublicKeyword))
             .WithParameterList(parameterList)
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
-
 
         var @interface =
             InterfaceDeclaration($"I{useCaseName}Service")

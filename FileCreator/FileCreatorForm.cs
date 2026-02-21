@@ -14,6 +14,7 @@ public partial class FileCreatorForm : Form
     private string _functionalTestsBasePath = string.Empty;
     private string _unitTestsBasePath = string.Empty;
     private string _sharedKerbalTestsBasePath = string.Empty;
+    private string _infrastructureBasePath = string.Empty;
 
     public FileCreatorForm()
     {
@@ -56,6 +57,7 @@ public partial class FileCreatorForm : Form
         _functionalTestsBasePath = Properties.Settings.Default.FunctionalTestPath;
         _unitTestsBasePath = Properties.Settings.Default.UnitTestPath;
         _sharedKerbalTestsBasePath = Properties.Settings.Default.SharedKernelPath;
+        _infrastructureBasePath = Properties.Settings.Default.InfrastructurePath;
 
         btnGenerate.Enabled =
             !string.IsNullOrWhiteSpace(_useCasesBasePath) ||
@@ -137,18 +139,19 @@ public partial class FileCreatorForm : Form
 
             // 1️⃣ Generate Roslyn Files (memory only)
             var generator = new RoslynFileCreator(
-                _solutionName,
-                group,
-                useCaseName,
-                _useCasesBasePath,
-                _webBasePath,
-                _functionalTestsBasePath,
-                _unitTestsBasePath,
-                hasRequest,
-                type,
-                hasResponse,
-                responseType,
-                httpVerb);
+                solutionName: _solutionName,
+                groupName: group,
+                usecaseName: useCaseName,
+                useCasePath: _useCasesBasePath,
+                webPath: _webBasePath,
+                functionalTestPath: _functionalTestsBasePath,
+                unitTestPath: _unitTestsBasePath,
+                infrastructurePath: _infrastructureBasePath,
+                hasRequest: hasRequest,
+                requestType: type,
+                hasResponse: hasResponse,
+                responseType: responseType,
+                httpVerb: httpVerb);
 
             var previewFiles = generator.GeneratePreview();
 

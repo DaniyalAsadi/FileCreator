@@ -17,7 +17,7 @@ public partial class SettingsForm : Form
         txtSolutionPath.Text = Properties.Settings.Default.SolutionPath;
     }
 
-    private void btnBrowse_Click(object sender, EventArgs e)
+    private void BtnBrowse_Click(object sender, EventArgs e)
     {
         using var ofd = new OpenFileDialog();
         ofd.Filter = "Solution Files (*.sln)|*.sln";
@@ -27,7 +27,7 @@ public partial class SettingsForm : Form
         }
     }
 
-    private void btnSave_Click(object sender, EventArgs e)
+    private void BtnSave_Click(object sender, EventArgs e)
     {
         string slnPath = txtSolutionPath.Text.Trim();
 
@@ -61,9 +61,15 @@ public partial class SettingsForm : Form
             Properties.Settings.Default.FunctionalTestPath = functionalTestFolder;
             string sharedKernelFolder = ExtractFolder("SharedKernel", lines, solutionFolder, solutionName);
             Properties.Settings.Default.SharedKernelPath = sharedKernelFolder;
+            string infrastructureFolder = ExtractFolder("Infrastructure", lines, solutionFolder, solutionName);
+
             Properties.Settings.Default.Save();
 
-            MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            var result = MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (result == DialogResult.OK)
+            {
+                Close();
+            }
         }
         catch (Exception ex)
         {
@@ -75,11 +81,7 @@ public partial class SettingsForm : Form
         {
             string useCasesPattern = $@"Project\(""\{{[A-F0-9\-]+\}}""\)\s*=\s*""{Regex.Escape(soloutionName)}\.{Regex.Escape(projectName)}"",\s*""(?<path>[^""]+\.csproj)""";
             var useCasesMatch = lines.Select(l => Regex.Match(l, useCasesPattern))
-                                     .FirstOrDefault(m => m.Success);
-
-            if (useCasesMatch == null)
-                throw new FileNotFoundException($"{soloutionName}.{projectName} project not found in Solution.");
-
+                                     .FirstOrDefault(m => m.Success) ?? throw new FileNotFoundException($"{soloutionName}.{projectName} project not found in Solution.");
             string useCasesRelative = useCasesMatch.Groups["path"].Value;
             string useCasesFolder = Path.Combine(solutionFolder, Path.GetDirectoryName(useCasesRelative)!);
             string useCasesCsproj = Path.Combine(useCasesFolder, Path.GetFileName(useCasesRelative));
@@ -91,13 +93,14 @@ public partial class SettingsForm : Form
     }
 
     // کمکی برای پاک کردن مقادیر Settings
-    private void ClearSettings()
+    private static void ClearSettings()
     {
         Properties.Settings.Default.SolutionPath = string.Empty;
         Properties.Settings.Default.UseCasesPath = string.Empty;
         Properties.Settings.Default.FunctionalTestPath = string.Empty;
         Properties.Settings.Default.UnitTestPath = string.Empty;
         Properties.Settings.Default.WebPath = string.Empty;
+        Properties.Settings.Default.InfrastructurePath = string.Empty;
         Properties.Settings.Default.Save();
     }
 
