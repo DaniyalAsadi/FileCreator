@@ -143,15 +143,6 @@ partial class FileCreatorForm
         txtRoute.Size = new Size(124, 23);
         txtRoute.TabIndex = 7;
         // 
-        // btnGenerate
-        // 
-        btnGenerate.Location = new Point(12, 150);
-        btnGenerate.Name = "btnGenerate";
-        btnGenerate.Size = new Size(428, 32);
-        btnGenerate.TabIndex = 8;
-        btnGenerate.Text = "Generate UseCase + Endpoint Files";
-        btnGenerate.Click += BtnGenerate_Click;
-        // 
         // cmbResponseType
         // 
         cmbResponseType.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -159,10 +150,20 @@ partial class FileCreatorForm
         cmbResponseType.Location = new Point(280, 110);
         cmbResponseType.Name = "cmbResponseType";
         cmbResponseType.Size = new Size(160, 23);
-        cmbResponseType.TabIndex = 9;
+        cmbResponseType.TabIndex = 8;
         cmbResponseType.SelectedIndex = 0;
         cmbResponseType.Enabled = false;
         cmbResponseType.Visible = true;
+        // 
+        // btnGenerate
+        // 
+        btnGenerate.Location = new Point(12, 150);
+        btnGenerate.Name = "btnGenerate";
+        btnGenerate.Size = new Size(428, 32);
+        btnGenerate.TabIndex = 9;
+        btnGenerate.Text = "Generate UseCase + Endpoint Files";
+        btnGenerate.Click += BtnGenerate_Click;
+        
         // 
         // FileCreatorForm
         // 
@@ -187,5 +188,18 @@ partial class FileCreatorForm
         menuStrip.PerformLayout();
         ResumeLayout(false);
         PerformLayout();
+        SetDefaultValue();
+    }
+    private void SetDefaultValue()
+    {
+        cmbType.SelectedIndex = 1;
+        cmbVerb.SelectedIndex = 0;
+        cmbResponseType.SelectedIndex = 2;
+        txtUseCaseGroup.Text = "Test";
+        txtUseCaseName.Text = "List";
+        txtRoute.Text = "tests";
+        chkHasRequest.Checked = true;
+        chkHasResponse.Checked = true;
+
     }
 }

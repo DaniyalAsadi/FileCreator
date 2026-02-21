@@ -9,7 +9,7 @@ public class EndpointRequestValidatorGenerator
 {
     public static CompilationUnitSyntax Generate(string ns, string useCaseName)
     {
-        var baseType = ParseTypeName($"AbstractValidator<{useCaseName}Request>");
+        var baseType = ParseTypeName($"Validator<{useCaseName}Request>");
 
         var ctor =
             ConstructorDeclaration($"{useCaseName}Validator")

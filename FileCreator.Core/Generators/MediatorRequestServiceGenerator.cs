@@ -12,9 +12,9 @@ public class MediatorRequestServiceGenerator
     {
         var resultType = responseType switch
         {
-            ResponseType.Single => $"{useCaseName}Response?",
-            ResponseType.IEnumerable => $"IEnumerable<{useCaseName}Response>",
-            ResponseType.PagedList => $"PagedList<{useCaseName}Response>",
+            ResponseType.Single => $"Task<{useCaseName}{type}Response?>",
+            ResponseType.IEnumerable => $"Task<IEnumerable<{useCaseName}{type}Response>>",
+            ResponseType.PagedList => $"Task<PagedList<{useCaseName}{type}Response>>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
         var identifierName = responseType switch
@@ -49,7 +49,8 @@ public class MediatorRequestServiceGenerator
             Identifier(identifierName))
             .AddModifiers(
                 Token(SyntaxKind.PublicKeyword))
-            .WithParameterList(parameterList);
+            .WithParameterList(parameterList)
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
 
         var @interface =

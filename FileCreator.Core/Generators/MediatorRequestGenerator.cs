@@ -23,9 +23,9 @@ public class MediatorRequestGenerator
         {
             resultType = responseType switch
             {
-                ResponseType.Single => $"Result<{useCaseName}Response>",
-                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}Response>>",
-                ResponseType.PagedList => $"Result<PagedList<{useCaseName}Response>>",
+                ResponseType.Single => $"Result<{useCaseName}{type}Response>",
+                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
+                ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         }
@@ -59,7 +59,7 @@ public class MediatorRequestGenerator
             var ctorParams = ParameterList(SeparatedList(
             [
             Parameter(Identifier("filter"))
-                .WithType(ParseTypeName($"{useCaseName}Filter")),
+                .WithType(ParseTypeName($"{useCaseName}{type}Filter")),
 
             Parameter(Identifier("pagedRequest"))
                 .WithType(ParseTypeName("PagedRequest"))
@@ -72,7 +72,7 @@ public class MediatorRequestGenerator
             // public {UseCaseName}Filter Filter { get; } = filter;
             var filterProp =
                 PropertyDeclaration(
-                        ParseTypeName($"{useCaseName}Filter"),
+                        ParseTypeName($"{useCaseName}{type}Filter"),
                         Identifier("Filter"))
                     .AddModifiers(Token(SyntaxKind.PublicKeyword))
                     .AddAccessorListAccessors(

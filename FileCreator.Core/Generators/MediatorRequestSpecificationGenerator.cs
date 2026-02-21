@@ -24,6 +24,7 @@ public class MediatorRequestSpecificationGenerator
                 .AddBaseListTypes(SimpleBaseType(ParseTypeName("Specification")))
                 .AddMembers(ctor);
 
-        return RoslynHelpers.CompilationUnit(ns, response);
+        return RoslynHelpers.CompilationUnit(ns, response,
+            "Ardalis.Specification");
     }
 }

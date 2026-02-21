@@ -1,15 +1,20 @@
 using FileCreator.Core;
 using FileCreator.Core.Rewriter;
+using System.Reflection.Emit;
 namespace FileCreator;
 
 public partial class FileCreatorForm : Form
 {
+    private PreviewWorkspace? _workspace;
+
+    private string _slnPath = string.Empty;
     private string _solutionName = string.Empty;
     private string _useCasesBasePath = string.Empty;
     private string _webBasePath = string.Empty;
     private string _functionalTestsBasePath = string.Empty;
     private string _unitTestsBasePath = string.Empty;
-    private string _sharedKerbalTestsBasePath = string.Empty;   
+    private string _sharedKerbalTestsBasePath = string.Empty;
+
     public FileCreatorForm()
     {
         InitializeComponent();
@@ -17,11 +22,35 @@ public partial class FileCreatorForm : Form
     }
 
     // ----------------------------------------------------
+    // Workspace Initialization (ONLY ONCE)
+    // ----------------------------------------------------
+    protected override async void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+
+        try
+        {
+            UseWaitCursor = true;
+
+            _workspace = WorkspaceCache.GetWorkspace(_slnPath);
+
+            // Warmup Roslyn (build graph, load metadata, etc.)
+            await _workspace.WarmupAsync();
+        }
+        finally
+        {
+            UseWaitCursor = false;
+        }
+    }
+
+    // ----------------------------------------------------
     // SETTINGS
     // ----------------------------------------------------
     private void LoadSettings()
     {
-        _solutionName = Path.GetFileNameWithoutExtension(Properties.Settings.Default.SolutionPath);
+        _slnPath = Properties.Settings.Default.SolutionPath;
+        _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
+
         _useCasesBasePath = Properties.Settings.Default.UseCasesPath;
         _webBasePath = Properties.Settings.Default.WebPath;
         _functionalTestsBasePath = Properties.Settings.Default.FunctionalTestPath;
@@ -41,22 +70,27 @@ public partial class FileCreatorForm : Form
     }
 
     // ----------------------------------------------------
-    // GENERATION
+    // GENERATION PIPELINE
     // ----------------------------------------------------
-    private void BtnGenerate_Click(object sender, EventArgs e)
+    private async void BtnGenerate_Click(object sender, EventArgs e)
     {
+        if (_workspace is null)
+        {
+            MessageBox.Show("Workspace is not ready yet.");
+            return;
+        }
+
         string useCaseName = txtUseCaseName.Text.Trim();
         string route = txtRoute.Text.Trim();
+
         RequestType type = Enum.Parse<RequestType>(cmbType.SelectedItem?.ToString() ?? "Command");
         ResponseType responseType = Enum.Parse<ResponseType>(cmbResponseType.SelectedItem?.ToString() ?? "Single");
-
-        HttpVerb httpVerb = Enum.Parse<HttpVerb>(cmbVerb.SelectedItem?.ToString()?.ToUpper() ?? "POST") ;
+        HttpVerb httpVerb = Enum.Parse<HttpVerb>(cmbVerb.SelectedItem?.ToString()?.ToUpper() ?? "POST");
 
         bool hasRequest = chkHasRequest.Checked;
         bool hasResponse = chkHasResponse.Checked;
 
         // -------- VALIDATION --------
-
 
         if (string.IsNullOrWhiteSpace(useCaseName))
         {
@@ -70,19 +104,15 @@ public partial class FileCreatorForm : Form
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_useCasesBasePath))
-        {
-            MessageBox.Show("Settings not configured.");
-            return;
-        }
         if (type == RequestType.Command && responseType is ResponseType.IEnumerable or ResponseType.PagedList)
         {
             MessageBox.Show("Command cannot return collections.");
             return;
         }
+
         if (type == RequestType.Query && !hasResponse)
         {
-            MessageBox.Show("Query Must Have Response");
+            MessageBox.Show("Query must have response.");
             return;
         }
 
@@ -92,19 +122,22 @@ public partial class FileCreatorForm : Form
             MessageBox.Show("UseCase Group is required.");
             return;
         }
+
         if (GroupName.IsPlural(groupString))
         {
-            MessageBox.Show($"{txtUseCaseGroup.Text} Must be Singluare");
+            MessageBox.Show($"{groupString} must be singular.");
             return;
         }
-        GroupName group = GroupName.Create(txtUseCaseGroup.Text.Trim());
 
+        GroupName group = GroupName.Create(groupString);
 
         try
         {
+            UseWaitCursor = true;
 
-            var roslynFileCreator = new RoslynFileCreator(
-                SolutionName: _solutionName,
+            // 1️⃣ Generate Roslyn Files (memory only)
+            var generator = new RoslynFileCreator(
+                _solutionName,
                 group,
                 useCaseName,
                 _useCasesBasePath,
@@ -116,33 +149,44 @@ public partial class FileCreatorForm : Form
                 hasResponse,
                 responseType,
                 httpVerb);
-            roslynFileCreator.Generate();
 
+            var previewFiles = generator.GeneratePreview();
 
-            ;
-            var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
-            ApiRoutesUpdater.Update(
-                apiRoutePath,
-                group.Resource,
-                useCaseName,
-                httpVerb,
-                route);
+            // 2️⃣ Inject into Roslyn Solution Snapshot
+            _workspace.InjectGeneratedFiles(previewFiles);
 
+            // 3️⃣ Show Preview (Viewer Only)
+            using var previewForm = new PreviewForm(_workspace, previewFiles);
 
-            MessageBox.Show("Files generated successfully.");
+            if (previewForm.ShowDialog() == DialogResult.OK)
+            {
+                // 4️⃣ Write to Disk
+                RoslynFileCreator.WriteFiles(previewFiles);
+
+                var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
+                ApiRoutesUpdater.Update(
+                    apiRoutePath,
+                    group.Resource,
+                    useCaseName,
+                    httpVerb,
+                    route);
+
+                MessageBox.Show("Files generated successfully!");
+            }
         }
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Error");
         }
+        finally
+        {
+            UseWaitCursor = false;
+        }
     }
 
-
-    private void BtnExit_Click(object sender, EventArgs e)
-    {
-        this.Close();
-    }
-
+    // ----------------------------------------------------
+    // HELPERS
+    // ----------------------------------------------------
     public static string FindApiRoutes(string rootDirectory)
     {
         if (!Directory.Exists(rootDirectory))
@@ -152,7 +196,12 @@ public partial class FileCreatorForm : Form
             .EnumerateFiles(rootDirectory, "ApiRoutes.cs", SearchOption.AllDirectories)
             .FirstOrDefault();
 
-        return file is null ? throw new FileNotFoundException("ApiRoutes.cs not found.") : file;
+        return file ?? throw new FileNotFoundException("ApiRoutes.cs not found.");
+    }
+
+    private void BtnExit_Click(object sender, EventArgs e)
+    {
+        Close();
     }
 
     private void ChkHasResponse_CheckedChanged(object sender, EventArgs e)

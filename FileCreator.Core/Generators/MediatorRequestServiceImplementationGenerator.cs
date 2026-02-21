@@ -12,13 +12,13 @@ namespace FileCreator.Core.Generators;
 
 public class MediatorRequestServiceImplementationGenerator
 {
-    public static CompilationUnitSyntax Generate(string ns, string useCaseName, ResponseType responseType)
+    public static CompilationUnitSyntax Generate(string ns, string useCaseName,RequestType type, ResponseType responseType)
     {
         var resultType = responseType switch
         {
-            ResponseType.Single => $"{useCaseName}Response?",
-            ResponseType.IEnumerable => $"IEnumerable<{useCaseName}Response>",
-            ResponseType.PagedList => $"PagedList<{useCaseName}Response>",
+            ResponseType.Single => $"{useCaseName}{type}Response?",
+            ResponseType.IEnumerable => $"IEnumerable<{useCaseName}{type}Response>",
+            ResponseType.PagedList => $"PagedList<{useCaseName}{type}Response>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
         var identifierName = responseType switch

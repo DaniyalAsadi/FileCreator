@@ -4,189 +4,158 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Data;
+using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace FileCreator;
 
-public class RoslynFileCreator(
-    string SolutionName,
-    GroupName GroupName,
-    string UsecaseName,
-    string UseCasePath,
-    string WebPath,
-    string FunctionalTestPath,
-    string UnitTestPath,
-    bool HasRequest,
-    RequestType RequestType,
-    bool HasResponse,
-    ResponseType ResponseType,
-    HttpVerb HttpVerb)
+public sealed class RoslynFileCreator(
+    string solutionName,
+    GroupName groupName,
+    string usecaseName,
+    string useCasePath,
+    string webPath,
+    string functionalTestPath,
+    string unitTestPath,
+    bool hasRequest,
+    RequestType requestType,
+    bool hasResponse,
+    ResponseType responseType,
+    HttpVerb httpVerb)
 {
-    
-    public void Generate()
+    public string SolutionName { get; } = solutionName;
+    public GroupName GroupName { get; } = groupName;
+    public string UsecaseName { get; } = usecaseName;
+    public string UseCasePath { get; } = useCasePath;
+    public string WebPath { get; } = webPath;
+    public string FunctionalTestPath { get; } = functionalTestPath;
+    public string UnitTestPath { get; } = unitTestPath;
+    public bool HasRequest { get; } = hasRequest;
+    public RequestType RequestType { get; } = requestType;
+    public bool HasResponse { get; } = hasResponse;
+    public ResponseType ResponseType { get; } = responseType;
+    public HttpVerb HttpVerb { get; } = httpVerb;
+
+    // ------------------------
+    // Generate Preview (no File IO)
+    // ------------------------
+    public IReadOnlyList<GeneratedFile> GeneratePreview()
     {
+        var files = new List<GeneratedFile>();
 
         string useCasePath = Path.Combine(
-                UseCasePath,
-                GroupName.Feature,
-                RequestType == RequestType.Command ? "Commands" : "Queries",
-                UsecaseName);
+            UseCasePath,
+            GroupName.Feature,
+            RequestType == RequestType.Command ? "Commands" : "Queries",
+            UsecaseName);
 
         string endpointPath = Path.Combine(
-                WebPath,
-                "EndPoints",
-                GroupName.Resource,
-                UsecaseName);
+            WebPath,
+            "EndPoints",
+            GroupName.Resource,
+            UsecaseName);
+
         string unitTestPath = Path.Combine(
             UnitTestPath,
             "UseCases",
             GroupName.Feature);
+
         string functionalPath = Path.Combine(
             FunctionalTestPath,
             "ApiEndpoints",
             GroupName.Resource);
 
+        string usecaseNamespace = $"{SolutionName}.UseCases.{GroupName.Feature}.{(RequestType == RequestType.Command ? "Commands" : "Queries")}.{UsecaseName}";
+        string webNamespace = $"{SolutionName}.Web.EndPoints.{GroupName.Resource}.{UsecaseName}";
+        string functionalNamespace = $"{SolutionName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
+        string unitTestNamespace = $"{SolutionName}.UnitTests.UseCases.{GroupName.Feature}";
 
-        string usecaseFolderNameSpace = $"{SolutionName}.UseCases.{GroupName.Feature}.{(RequestType == RequestType.Command ? "Commands" : "Queries")}.{UsecaseName}";
-        string webFolderNameSpace = $"{SolutionName}.Web.EndPoints.{GroupName.Resource}.{UsecaseName}";
-        string functionalTestFolderNameSpace = $"{SolutionName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
-        string unitTestsFolderNameSpace = $"{SolutionName}.UnitTests.UseCases.{GroupName.Feature}";
-        // ------------------------ MediatorRequestGenerator ------------------------ 
-        WriteIfNotExists(Path.Combine(
-                useCasePath,
-                $"{UsecaseName}{RequestType}.cs"),
-            MediatorRequestGenerator.Generate(
-                usecaseFolderNameSpace,
-                UsecaseName,
-                RequestType,
-                HasResponse,
-                ResponseType));
-        // ------------------------ MediatorRequestHandlerGenerator ------------------------ 
-        WriteIfNotExists(Path.Combine(
-                useCasePath,
-                $"{UsecaseName}{RequestType}Handler.cs"),
-            MediatorRequestHandlerGenerator.Generate(
-                usecaseFolderNameSpace,
-                UsecaseName,
-                RequestType,
-                HasResponse,
-                ResponseType));
+        // ------------------------ MediatorRequest ------------------------
+        files.Add(new GeneratedFile(
+            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}.cs"),
+            MediatorRequestGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        ));
+
+        files.Add(new GeneratedFile(
+            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Handler.cs"),
+            MediatorRequestHandlerGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        ));
 
         if (HasResponse)
         {
             if (ResponseType == ResponseType.PagedList)
             {
-                // ------------------------ MediatorRequestFiltersGenerator ------------------------ 
-                WriteIfNotExists(Path.Combine(
-                    useCasePath,
-                $"{UsecaseName}{RequestType}Filter.cs"),
-                MediatorRequestFiltersGenerator.Generate(
-                    usecaseFolderNameSpace,
-                    UsecaseName,
-                    RequestType));
+                files.Add(new GeneratedFile(
+                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Filter.cs"),
+                    MediatorRequestFiltersGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+                ));
             }
 
-            // ------------------------ MediatorRequestResponseGenerator ------------------------ 
-            WriteIfNotExists(Path.Combine(
-                useCasePath,
-                $"{UsecaseName}{RequestType}Response.cs"),
-                MediatorRequestResponseGenerator.Generate(
-                    usecaseFolderNameSpace,
-                    UsecaseName,
-                    RequestType));
+            files.Add(new GeneratedFile(
+                Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
+                MediatorRequestResponseGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+            ));
         }
+
         if (RequestType == RequestType.Query)
         {
-            WriteIfNotExists(Path.Combine(useCasePath,
-                $"{UsecaseName}{RequestType}Specification"),
-                MediatorRequestSpecificationGenerator.Generate(
-                usecaseFolderNameSpace,
-                    UsecaseName,
-                    RequestType));
+            files.Add(new GeneratedFile(
+                Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
+                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+            ));
 
-
-            WriteIfNotExists(Path.Combine(useCasePath,
-                $"I{UsecaseName}Service.cs"),
-                MediatorRequestServiceGenerator.Generate(
-                    usecaseFolderNameSpace,
-                    UsecaseName,
-                    RequestType,
-                    ResponseType));
+            files.Add(new GeneratedFile(
+                Path.Combine(useCasePath, $"I{UsecaseName}Service.cs"),
+                MediatorRequestServiceGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
+            ));
         }
 
+        // ------------------------ Endpoint ------------------------
+        files.Add(new GeneratedFile(
+            Path.Combine(endpointPath, $"{UsecaseName}.cs"),
+            EndpointGenerator.Generate(webNamespace, usecaseNamespace, GroupName.Resource, UsecaseName, RequestType, HttpVerb, HasRequest, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        ));
 
-            // ------------------------ EndpointGenerator ------------------------ 
-            WriteIfNotExists(Path.Combine(endpointPath,
-            $"{UsecaseName}.cs"),
-                EndpointGenerator.Generate(
-                webFolderNameSpace,
-                usecaseFolderNameSpace,
-                GroupName.Resource,
-                UsecaseName,
-                RequestType,
-                HttpVerb,
-                HasRequest,
-                HasResponse,
-                ResponseType));
         if (HasRequest)
         {
-            // ------------------------ EndpointRequestGenerator ------------------------ 
-            WriteIfNotExists(
-                Path.Combine(endpointPath,
-                $"{UsecaseName}Request.cs"),
-                EndpointRequestGenerator.Generate(
-                    webFolderNameSpace,
-                    usecaseFolderNameSpace,
-                    UsecaseName,
-                    RequestType,
-                    HasResponse,
-                    ResponseType));
-            // ------------------------ EndpointRequestValidatorGenerator ------------------------ 
+            files.Add(new GeneratedFile(
+                Path.Combine(endpointPath, $"{UsecaseName}Request.cs"),
+                EndpointRequestGenerator.Generate(webNamespace, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+            ));
 
-            WriteIfNotExists(
-                Path.Combine(webFolderNameSpace,
-                $"{UsecaseName}Validator.cs"),
-                EndpointRequestValidatorGenerator.Generate(webFolderNameSpace, UsecaseName));
+            files.Add(new GeneratedFile(
+                Path.Combine(endpointPath, $"{UsecaseName}Validator.cs"),
+                EndpointRequestValidatorGenerator.Generate(webNamespace, UsecaseName).NormalizeWhitespace().ToFullString()
+            ));
         }
-        // ------------------------ EndpointTestGenerator ------------------------ 
-        WriteIfNotExists(
-            Path.Combine(functionalPath,
-            $"{UsecaseName}Tests.cs"),
-            EndpointTestGenerator.Generate(
-                functionalTestFolderNameSpace,
-                webFolderNameSpace,
-                GroupName,
-                UsecaseName,
-                HasRequest,
-                RequestType,
-                HasResponse,
-                ResponseType,
-                HttpVerb));
-        // ------------------------ MediatorRequestHandlerTestGenerator ------------------------ 
-        WriteIfNotExists(
-            Path.Combine(unitTestPath,
-            $"{UsecaseName}{RequestType}HandlerTests.cs"),
-            MediatorRequestHandlerTestGenerator.Generate(
-                unitTestsFolderNameSpace,
-                usecaseFolderNameSpace,
-                UsecaseName,
-                RequestType,
-                HasResponse,
-                ResponseType));
 
+        // ------------------------ Tests ------------------------
+        files.Add(new GeneratedFile(
+            Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
+            EndpointTestGenerator.Generate(functionalNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
+        ));
+
+        files.Add(new GeneratedFile(
+            Path.Combine(unitTestPath, $"{UsecaseName}{RequestType}HandlerTests.cs"),
+            MediatorRequestHandlerTestGenerator.Generate(unitTestNamespace, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        ));
+
+        return files;
     }
 
-
-
-
-    private static void WriteIfNotExists(string path, CompilationUnitSyntax content)
+    // ------------------------
+    // Optional: Write to disk
+    // ------------------------
+    public static void WriteFiles(IEnumerable<GeneratedFile> files)
     {
-        var pathDirectory = Path.GetDirectoryName(path);
-        if (!Directory.Exists(pathDirectory))
+        foreach (var file in files)
         {
-            Directory.CreateDirectory(pathDirectory!);
+            var dir = Path.GetDirectoryName(file.Path)!;
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            if (!File.Exists(file.Path))
+                File.WriteAllText(file.Path, file.Content, Encoding.UTF8);
         }
-        if (!File.Exists(path))
-            File.WriteAllText(path, content.NormalizeWhitespace().ToFullString());
     }
 }

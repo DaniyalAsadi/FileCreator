@@ -24,9 +24,9 @@ public class MediatorRequestHandlerGenerator
         {
             resultType = responseType switch
             {
-                ResponseType.Single => $"Result<{useCaseName}Response>",
-                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}Response>>",
-                ResponseType.PagedList => $"Result<PagedList<{useCaseName}Response>>",
+                ResponseType.Single => $"Result<{useCaseName}{type}Response>",
+                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
+                ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         }
@@ -90,9 +90,9 @@ public class MediatorRequestHandlerGenerator
             {
                 successStatement = responseType switch
                 {
-                    ResponseType.Single => $"return Result.Success(new {useCaseName}Response());",
-                    ResponseType.IEnumerable => $"return Result.Success(Array.Empty<{useCaseName}Response>());",
-                    ResponseType.PagedList => $"return Result.Success(Array.Empty<{useCaseName}Response>().ToPagedList(request.PagedRequest.PageIndex,request.PagedRequest.PageSize));",
+                    ResponseType.Single => $"return Result.Success(new {useCaseName}{type}Response());",
+                    ResponseType.IEnumerable => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>());",
+                    ResponseType.PagedList => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>().ToPagedList(request.PagedRequest.PageIndex,request.PagedRequest.PageSize));",
                     _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
                 };
 
