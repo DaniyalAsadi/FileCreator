@@ -224,12 +224,9 @@ partial class FileCreatorForm
     }
     private void SetDefaultValue()
     {
-        cmbType.SelectedIndex = 1;
+        cmbType.SelectedIndex = 0;
         cmbVerb.SelectedIndex = 0;
-        cmbResponseType.SelectedIndex = 2;
-        txtUseCaseGroup.Text = "Test";
-        txtUseCaseName.Text = "List";
-        txtRoute.Text = "tests";
+        cmbResponseType.SelectedIndex = 0;
         chkHasRequest.Checked = true;
         chkHasResponse.Checked = true;
 

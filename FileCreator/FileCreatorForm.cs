@@ -28,7 +28,11 @@ public partial class FileCreatorForm : Form
     protected override async void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-
+        if(string.IsNullOrWhiteSpace(_slnPath))
+        {
+            MessageBox.Show("Please set the solution path in settings.");
+            return;
+        }
         try
         {
             UseWaitCursor = true;
@@ -42,6 +46,7 @@ public partial class FileCreatorForm : Form
         {
             UseWaitCursor = false;
         }
+
     }
 
     // ----------------------------------------------------

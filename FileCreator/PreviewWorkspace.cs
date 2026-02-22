@@ -28,7 +28,20 @@ public sealed class PreviewWorkspace : IDisposable
     private readonly List<(string dir, ProjectId id)> _projectDirs = [];
 
     // Cache Style ها
-    private readonly ConcurrentDictionary<string, TextStyle> _styleCache = new();
+    private static readonly Dictionary<string, TextStyle> _predefinedStyles = new()
+    {
+        [ClassificationTypeNames.Keyword] = new TextStyle(new SolidBrush(Color.FromArgb(86, 156, 214)), null, FontStyle.Regular),
+        [ClassificationTypeNames.ClassName] = new TextStyle(new SolidBrush(Color.FromArgb(78, 201, 176)), null, FontStyle.Regular),
+        [ClassificationTypeNames.StructName] = new TextStyle(new SolidBrush(Color.FromArgb(134, 198, 145)), null, FontStyle.Regular),
+        [ClassificationTypeNames.InterfaceName] = new TextStyle(new SolidBrush(Color.FromArgb(184, 215, 163)), null, FontStyle.Regular),
+        [ClassificationTypeNames.EnumName] = new TextStyle(new SolidBrush(Color.FromArgb(184, 215, 163)), null, FontStyle.Regular),
+        [ClassificationTypeNames.MethodName] = new TextStyle(new SolidBrush(Color.FromArgb(220, 220, 170)), null, FontStyle.Regular),
+        [ClassificationTypeNames.PropertyName] = new TextStyle(new SolidBrush(Color.FromArgb(220, 220, 170)), null, FontStyle.Regular),
+        [ClassificationTypeNames.StringLiteral] = new TextStyle(new SolidBrush(Color.FromArgb(214, 157, 133)), null, FontStyle.Regular),
+        [ClassificationTypeNames.NumericLiteral] = new TextStyle(new SolidBrush(Color.FromArgb(181, 206, 168)), null, FontStyle.Regular),
+        [ClassificationTypeNames.Comment] = new TextStyle(new SolidBrush(Color.FromArgb(87, 166, 74)), null, FontStyle.Regular),
+        ["Default"] = new TextStyle(new SolidBrush(Color.Gainsboro), null, FontStyle.Regular)
+    };
 
     private bool _isWarmedUp;
 
@@ -162,10 +175,8 @@ public sealed class PreviewWorkspace : IDisposable
 
         foreach (var span in spans)
         {
-            var color = MapColor(span.ClassificationType);
-
-            var style = _styleCache.GetOrAdd(span.ClassificationType,
-                _ => new TextStyle(new SolidBrush(color), null, FontStyle.Regular));
+            var style = _predefinedStyles.TryGetValue(span.ClassificationType, out TextStyle? value)
+                ? value : _predefinedStyles["Default"];
 
             var range = GetRange(editor, span.TextSpan);
             range.SetStyle(style);
@@ -173,7 +184,6 @@ public sealed class PreviewWorkspace : IDisposable
 
         editor.EndUpdate();
     }
-
     private static Range GetRange(FastColoredTextBox editor, TextSpan span)
     {
         var start = editor.PositionToPlace(span.Start);
