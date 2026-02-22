@@ -110,7 +110,7 @@ public sealed class RoslynFileCreator(
         {
             files.Add(new GeneratedFile(
                 Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
-                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType,ResponseType).NormalizeWhitespace().ToFullString()
             ));
 
             files.Add(new GeneratedFile(

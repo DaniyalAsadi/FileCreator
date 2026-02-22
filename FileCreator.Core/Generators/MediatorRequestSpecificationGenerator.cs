@@ -8,12 +8,19 @@ namespace FileCreator.Core.Generators;
 
 public class MediatorRequestSpecificationGenerator
 {
-    public static CompilationUnitSyntax Generate(string ns, string useCaseName, RequestType type)
+    public static CompilationUnitSyntax Generate(string ns, string useCaseName, RequestType type,ResponseType responseType)
     {
         var ctor = ConstructorDeclaration($"{useCaseName}{type}Specification")
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .WithBody(Block(ParseStatement("_ = Query;")
                 ));
+        SimpleBaseTypeSyntax items = responseType switch
+        {
+            ResponseType.Single => SimpleBaseType(ParseTypeName("SingleResultSpecification")),
+            ResponseType.IEnumerable => SimpleBaseType(ParseTypeName("Specification")),
+            ResponseType.PagedList => SimpleBaseType(ParseTypeName("PagedListResultSpecification")),
+            _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
+        };
 
 
         var response =
@@ -21,7 +28,7 @@ public class MediatorRequestSpecificationGenerator
                 .AddModifiers(
                 Token(SyntaxKind.PublicKeyword),
                 Token(SyntaxKind.SealedKeyword))
-                .AddBaseListTypes(SimpleBaseType(ParseTypeName("Specification")))
+                .AddBaseListTypes(items)
                 .AddMembers(ctor);
 
         return RoslynHelpers.CompilationUnit(ns, response,

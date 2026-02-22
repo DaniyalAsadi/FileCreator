@@ -53,9 +53,9 @@ public class MediatorRequestServiceImplementationGenerator
 
         successStatement = responseType switch
         {
-            ResponseType.Single => $"return new {useCaseName}{type}Response();",
-            ResponseType.IEnumerable => $"return Array.Empty<{useCaseName}{type}Response>();",
-            ResponseType.PagedList => $"return Array.Empty<{useCaseName}{type}Response>().ToPagedList(request.PagedRequest.PageIndex,request.PagedRequest.PageSize);",
+            ResponseType.Single => $"repository.SingleOrDefaultAsync(new {useCaseName}{type}Specification(pagedRequest),cancellationToken);",
+            ResponseType.IEnumerable => $"Array.Empty<{useCaseName}{type}Response>();",
+            ResponseType.PagedList => $"repository.ToPagedListAsync(new {useCaseName}{type}Specification(pagedRequest),cancellationToken);",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
 
@@ -64,9 +64,8 @@ public class MediatorRequestServiceImplementationGenerator
             Identifier(identifierName))
             .AddModifiers(
                 Token(SyntaxKind.PublicKeyword))
-            .WithBody(Block())
-            .WithParameterList(parameterList)
-            .AddBodyStatements(Block(ParseStatement(successStatement)));
+            .WithExpressionBody(ArrowExpressionClause(ParseExpression(successStatement)))
+            .WithParameterList(parameterList);
 
         var @class =
             ClassDeclaration($"{useCaseName}Service")
@@ -74,6 +73,9 @@ public class MediatorRequestServiceImplementationGenerator
                 Token(SyntaxKind.PublicKeyword),
                 Token(SyntaxKind.SealedKeyword))
                 .AddMembers(method)
+                .WithParameterList(ParameterList([
+                    Parameter(Identifier("repository"))
+                    ]))
                 .AddBaseListTypes(SimpleBaseType(ParseTypeName($"I{useCaseName}Service")));
 
 
