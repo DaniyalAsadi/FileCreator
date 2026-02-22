@@ -27,6 +27,7 @@ public class EndpointGenerator
             {
                 ResponseType.Single => $"{useCaseName}{type}Response",
                 ResponseType.IEnumerable => $"IEnumerable<{useCaseName}{type}Response>",
+                ResponseType.KeyValuePair => $"IEnumerable<KeyValuePair<Guid,string>>",
                 ResponseType.PagedList => $"PagedList<{useCaseName}{type}Response>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
@@ -189,7 +190,7 @@ public class EndpointGenerator
                 Parameter(Identifier("req"))
                     .WithType(ParseTypeName($"{useCaseName}Request"));
 
-            var bindingAttr = ResolveBindingAttribute(httpVerb);
+            _ = ResolveBindingAttribute(httpVerb);
 
             //if (!string.IsNullOrEmpty(bindingAttr))
             //{

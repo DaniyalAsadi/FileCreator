@@ -4,5 +4,6 @@ public enum ResponseType
 {
     Single,
     IEnumerable,
+    KeyValuePair,
     PagedList
 }

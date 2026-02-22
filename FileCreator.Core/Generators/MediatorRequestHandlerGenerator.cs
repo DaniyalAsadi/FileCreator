@@ -26,6 +26,7 @@ public class MediatorRequestHandlerGenerator
             {
                 ResponseType.Single => $"Result<{useCaseName}{type}Response>",
                 ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
+                ResponseType.KeyValuePair => $"Result<IEnumerable<KeyValuePair<Guid,string>>>",
                 ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
@@ -41,6 +42,7 @@ public class MediatorRequestHandlerGenerator
             {
                 ResponseType.Single => $"GetAsync",
                 ResponseType.IEnumerable => "ListAsync",
+                ResponseType.KeyValuePair => "ListAsync",
                 ResponseType.PagedList => "ListAsync",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
@@ -92,6 +94,7 @@ public class MediatorRequestHandlerGenerator
                 {
                     ResponseType.Single => $"return Result.Success(new {useCaseName}{type}Response());",
                     ResponseType.IEnumerable => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>());",
+                    ResponseType.KeyValuePair => $"return Result.Success(Array.Empty<KeyValuePair<Guid,string>>());",
                     ResponseType.PagedList => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>().ToPagedList(request.PagedRequest.PageIndex,request.PagedRequest.PageSize));",
                     _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
                 };

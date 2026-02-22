@@ -99,18 +99,20 @@ public sealed class RoslynFileCreator(
                     MediatorRequestFiltersGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
                 ));
             }
-
-            files.Add(new GeneratedFile(
-                Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
-                MediatorRequestResponseGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
-            ));
+            if (ResponseType is not ResponseType.KeyValuePair)
+            {
+                files.Add(new GeneratedFile(
+                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
+                    MediatorRequestResponseGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+                ));
+            }
         }
 
         if (RequestType == RequestType.Query)
         {
             files.Add(new GeneratedFile(
                 Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
-                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType,ResponseType).NormalizeWhitespace().ToFullString()
+                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
             ));
 
             files.Add(new GeneratedFile(

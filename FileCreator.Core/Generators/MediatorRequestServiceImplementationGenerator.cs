@@ -23,6 +23,7 @@ public class MediatorRequestServiceImplementationGenerator
         {
             ResponseType.Single => $"Task<{useCaseName}{type}Response?>",
             ResponseType.IEnumerable => $"Task<IEnumerable<{useCaseName}{type}Response>>",
+            ResponseType.KeyValuePair => $"Task<IEnumerable<KeyValuePair<Guid,string>>>",
             ResponseType.PagedList => $"Task<PagedList<{useCaseName}{type}Response>>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
@@ -30,12 +31,13 @@ public class MediatorRequestServiceImplementationGenerator
         {
             ResponseType.Single => $"GetAsync",
             ResponseType.IEnumerable => "ListAsync",
+            ResponseType.KeyValuePair => "ListAsync",
             ResponseType.PagedList => "ListAsync",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
         ParameterListSyntax parameterList = responseType switch
         {
-            ResponseType.Single or ResponseType.IEnumerable =>
+            ResponseType.Single or ResponseType.IEnumerable or ResponseType.KeyValuePair =>
             ParameterList(
                     [
                     Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
@@ -55,6 +57,7 @@ public class MediatorRequestServiceImplementationGenerator
         {
             ResponseType.Single => $"repository.SingleOrDefaultAsync(new {useCaseName}{type}Specification(pagedRequest),cancellationToken);",
             ResponseType.IEnumerable => $"Array.Empty<{useCaseName}{type}Response>();",
+            ResponseType.KeyValuePair => $"Array.Empty<KeyValuePair<Guid,string>>();",
             ResponseType.PagedList => $"repository.ToPagedListAsync(new {useCaseName}{type}Specification(pagedRequest),cancellationToken);",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
