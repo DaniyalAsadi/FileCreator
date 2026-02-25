@@ -1,6 +1,7 @@
 ﻿using FileCreator.Core;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Humanizer;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -12,8 +13,6 @@ public sealed class ApiRoutesRewriter(
     HttpVerb httpVerb,
     string route) : CSharpSyntaxRewriter
 {
-
-
     // ------------------------------------------------------------
     // بازنویسی کلاس ApiRoutes
     // ------------------------------------------------------------
@@ -28,6 +27,7 @@ public sealed class ApiRoutesRewriter(
         // پیدا کردن کلاس گروه (مثلاً Communications)
         var groupClass = members
             .OfType<ClassDeclarationSyntax>()
+            .Where(e => e.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
             .FirstOrDefault(c => c.Identifier.Text == groupName);
 
         if (groupClass == null)
@@ -45,11 +45,12 @@ public sealed class ApiRoutesRewriter(
             members[idx] = groupClass;
         }
         var classMembers = members.OfType<ClassDeclarationSyntax>()
-                          .OrderBy(c => c.Identifier.Text) // Sort alphabetically
+                          .OrderByDescending(e => e.Modifiers.Any(e => e.IsKind(SyntaxKind.PublicKeyword)))
+                          .ThenBy(c => c.Identifier.Text)
                           .ToList();
 
         // نگه‌داشتن بقیه اعضا (اگر باشد)
-        var otherMembers = members.Where(m => m is not ClassDeclarationSyntax).ToList();
+        var otherMembers = members.Where(m => m is not ClassDeclarationSyntax).OrderBy(e => e.Modifiers.Any(e => e.IsKind(SyntaxKind.PublicKeyword))).ToList();
 
         // ترکیب دوباره
         members = [];
@@ -135,23 +136,43 @@ public sealed class ApiRoutesRewriter(
     // ------------------------------------------------------------
     private static FieldDeclarationSyntax CreateApiDescriptionField(string name, HttpVerb verb, string route)
     {
+        var httpVerb = verb.ToString().ToLower().Pascalize();
+
+        
+        var invocation =
+            InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    IdentifierName("Api"),
+                    IdentifierName(httpVerb)))
+            .WithArgumentList(
+                ArgumentList(SeparatedList(
+                [
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(route))),
+                    Argument(IdentifierName("Tag")),
+                    Argument(MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName("EndpointSecurityStore"),
+                        IdentifierName("Anonymous")))
+                ])));
+
+        var equalsClause =
+            EqualsValueClause(invocation);
+
         return FieldDeclaration(
-            VariableDeclaration(ParseTypeName("ApiDescription"))
-            .WithVariables(
-                SingletonSeparatedList(
-                    VariableDeclarator(name)
-                    .WithInitializer(
-                        EqualsValueClause(
-                            ImplicitObjectCreationExpression()
-                            .WithArgumentList(
-                                ArgumentList(SeparatedList(
-                                [
-                                    Argument(ParseExpression($"Http.{verb.ToString().ToUpper()}")),
-                                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(route)))
-                                ]))))))))
-            .AddModifiers(Token(SyntaxKind.PublicKeyword),
-                          Token(SyntaxKind.StaticKeyword),
-                          Token(SyntaxKind.ReadOnlyKeyword));
+                VariableDeclaration(ParseTypeName("ApiDescription"))
+                .WithVariables(
+                    SingletonSeparatedList(
+                        VariableDeclarator(name)
+                        .WithInitializer(equalsClause))))
+            .AddModifiers(
+                Token(SyntaxKind.PublicKeyword),
+                Token(SyntaxKind.StaticKeyword),
+                Token(SyntaxKind.ReadOnlyKeyword))
+            .WithLeadingTrivia(
+                TriviaList(EndOfLine(Environment.NewLine)))
+            .WithTrailingTrivia(
+                TriviaList(EndOfLine(Environment.NewLine)));
     }
 
     // ------------------------------------------------------------
@@ -162,18 +183,29 @@ public sealed class ApiRoutesRewriter(
         if (member is not FieldDeclarationSyntax field)
             return int.MaxValue;
 
-        var text = field.ToString();
+        var variables = field.Declaration.Variables;
+        var declator = variables.FirstOrDefault();
+        if (declator == null)
+            return int.MaxValue;
+        var equalsValueClauseSyntax = declator.Initializer;
+        if (equalsValueClauseSyntax?.Value is not InvocationExpressionSyntax invocationExpressionSyntax)
+            return int.MinValue;
+        if (invocationExpressionSyntax.Expression is not MemberAccessExpressionSyntax simpleMemberAccessExpressionSyntax)
+            return int.MaxValue;
+        var httpVerb = simpleMemberAccessExpressionSyntax.Name.Identifier.Text;
+        int order = httpVerb.ToUpper() switch
+        {
+            "GET" => 0,
+            "POST" => 1,
+            "PUT" => 2,
+            "PATCH" => 3,
+            "DELETE" => 4,
+            _ => throw new ArgumentOutOfRangeException(nameof(httpVerb), httpVerb, "Specified argument was out of the range of valid values.")
+        };
 
-        if (text.Contains("Http.GET")) return 0;
-        if (text.Contains("Http.POST")) return 1;
-        if (text.Contains("Http.PUT")) return 2;
-        if (text.Contains("Http.PATCH")) return 3;
-        if (text.Contains("Http.DELETE")) return 4;
-
-        return 10;
+        return order;
     }
 }
-
 public static class ApiRoutesUpdater
 {
     public static void Update(

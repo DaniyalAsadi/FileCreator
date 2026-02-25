@@ -166,21 +166,22 @@ public partial class FileCreatorForm : Form
             // 3️⃣ Show Preview (Viewer Only)
             using var previewForm = new PreviewForm(_workspace, previewFiles);
 
-            if (previewForm.ShowDialog() == DialogResult.OK)
+            if (previewForm.ShowDialog() != DialogResult.OK)
             {
-                // 4️⃣ Write to Disk
-                RoslynFileCreator.WriteFiles(previewFiles);
-
-                var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
-                ApiRoutesUpdater.Update(
-                    apiRoutePath,
-                    group.Resource,
-                    useCaseName,
-                    httpVerb,
-                    route);
-
-                MessageBox.Show("Files generated successfully!");
+                return;
             }
+            // 4️⃣ Write to Disk
+            RoslynFileCreator.WriteFiles(previewFiles);
+
+            var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
+            ApiRoutesUpdater.Update(
+                apiRoutePath,
+                group.Resource,
+                useCaseName,
+                httpVerb,
+                route);
+
+            MessageBox.Show("Files generated successfully!");
         }
         catch (Exception ex)
         {

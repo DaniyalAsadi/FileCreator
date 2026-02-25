@@ -45,8 +45,7 @@ partial class FileCreatorForm
         txtRoute = new TextBox();
         btnGenerate = new Button();
         cmbResponseType = new ComboBox();
-        menuStrip.SuspendLayout();
-        SuspendLayout();
+        
         // 
         // menuStrip
         // 
@@ -210,7 +209,7 @@ partial class FileCreatorForm
         Font = new Font("Segoe UI", 9);
         AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(455, 205);
-        FormBorderStyle = FormBorderStyle.FixedSingle;
+        FormBorderStyle = FormBorderStyle.None;
         MainMenuStrip = menuStrip;
         MaximizeBox = false;
         Name = "FileCreatorForm";
@@ -220,10 +219,15 @@ partial class FileCreatorForm
         ResumeLayout(false);
         PerformLayout();
         SetDefaultValue();
+        menuStrip.SuspendLayout();
+        SuspendLayout();
 
     }
     private void SetDefaultValue()
     {
+        txtUseCaseGroup.Text = "Authentication";
+        txtUseCaseName.Text = "Create";
+        txtRoute.Text = "tests/create";
         cmbType.SelectedIndex = 0;
         cmbVerb.SelectedIndex = 0;
         cmbResponseType.SelectedIndex = 0;
