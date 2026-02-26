@@ -18,49 +18,35 @@ public sealed class ApiRoutesRewriter(
     // ------------------------------------------------------------
     public override SyntaxNode? VisitClassDeclaration(ClassDeclarationSyntax node)
     {
-        // فقط کلاس ریشه ApiRoutes
         if (node.Identifier.Text != "ApiRoutes")
             return base.VisitClassDeclaration(node);
 
         var members = node.Members.ToList();
 
-        // پیدا کردن کلاس گروه (مثلاً Communications)
         var groupClass = members
             .OfType<ClassDeclarationSyntax>()
-            .Where(e => e.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
             .FirstOrDefault(c => c.Identifier.Text == groupName);
 
         if (groupClass == null)
         {
-            // اگر کلاس گروه وجود نداشت → بساز
             groupClass = CreateGroupClass();
             members.Add(groupClass);
         }
         else
         {
-            // اگر بود → Update
             groupClass = UpdateGroupClass(groupClass);
-            var idx = members.FindIndex(m => m == members.OfType<ClassDeclarationSyntax>()
-                .First(c => c.Identifier.Text == groupName));
-            members[idx] = groupClass;
+            var index = members.FindIndex(m =>
+                m is ClassDeclarationSyntax c &&
+                c.Identifier.Text == groupName);
+
+            members[index] = groupClass;
         }
-        var classMembers = members.OfType<ClassDeclarationSyntax>()
-                          .OrderByDescending(e => e.Modifiers.Any(e => e.IsKind(SyntaxKind.PublicKeyword)))
-                          .ThenBy(c => c.Identifier.Text)
-                          .ToList();
 
-        // نگه‌داشتن بقیه اعضا (اگر باشد)
-        var otherMembers = members.Where(m => m is not ClassDeclarationSyntax).OrderBy(e => e.Modifiers.Any(e => e.IsKind(SyntaxKind.PublicKeyword))).ToList();
-
-        // ترکیب دوباره
-        members = [];
-        members.AddRange(classMembers);
-        members.AddRange(otherMembers);
+        // 🔴 این خط مهم است
+        members = NormalizeAllGroups(members);
 
         return node.WithMembers(List(members));
-
     }
-
     // ------------------------------------------------------------
     // ساخت کلاس گروه جدید
     // ------------------------------------------------------------
@@ -106,6 +92,7 @@ public sealed class ApiRoutesRewriter(
         var ordered = members
             .Where(m => m != tagField)
             .OrderBy(GetSortKey)
+            .ThenBy(GetSortKey2,StringComparer.Ordinal)
             .ToList();
 
         members = [];
@@ -137,8 +124,6 @@ public sealed class ApiRoutesRewriter(
     private static FieldDeclarationSyntax CreateApiDescriptionField(string name, HttpVerb verb, string route)
     {
         var httpVerb = verb.ToString().ToLower().Pascalize();
-
-        
         var invocation =
             InvocationExpression(
                 MemberAccessExpression(
@@ -204,6 +189,65 @@ public sealed class ApiRoutesRewriter(
         };
 
         return order;
+    }
+    private static string GetSortKey2(MemberDeclarationSyntax member)
+    {
+        if (member is not FieldDeclarationSyntax field)
+            return "\uFFFF"; // push to end
+
+        return field.Declaration.Variables
+            .FirstOrDefault()?.Identifier.Text
+            ?? "\uFFFF";
+    }
+
+
+    private static List<MemberDeclarationSyntax> NormalizeAllGroups(
+    List<MemberDeclarationSyntax> members)
+    {
+        var groups = members
+            .OfType<ClassDeclarationSyntax>()
+            .OrderBy(c => c.Identifier.Text, StringComparer.Ordinal)
+            .Select(NormalizeGroupMembers)
+            .Cast<MemberDeclarationSyntax>()
+            .ToList();
+
+        var others = members
+            .Where(m => m is not ClassDeclarationSyntax)
+            .ToList();
+
+        var result = new List<MemberDeclarationSyntax>();
+        result.AddRange(groups);
+        result.AddRange(others);
+
+        return result;
+    }
+    private static ClassDeclarationSyntax NormalizeGroupMembers(
+    ClassDeclarationSyntax group)
+    {
+        var members = group.Members.ToList();
+
+        var tag = members
+            .OfType<FieldDeclarationSyntax>()
+            .FirstOrDefault(f =>
+                f.Declaration.Variables.First().Identifier.Text == "Tag");
+
+        var endpoints = members
+            .OfType<FieldDeclarationSyntax>()
+            .Where(f =>
+                f.Declaration.Variables.First().Identifier.Text != "Tag")
+            .OrderBy(GetSortKey)
+            .ThenBy(GetSortKey2, StringComparer.Ordinal)
+            .Cast<MemberDeclarationSyntax>()
+            .ToList();
+
+        var newMembers = new List<MemberDeclarationSyntax>();
+
+        if (tag != null)
+            newMembers.Add(tag);
+
+        newMembers.AddRange(endpoints);
+
+        return group.WithMembers(List(newMembers));
     }
 }
 public static class ApiRoutesUpdater
