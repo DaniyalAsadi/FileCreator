@@ -62,6 +62,9 @@ public partial class SettingsForm : Form
             string sharedKernelFolder = ExtractFolder("SharedKernel", lines, solutionFolder, solutionName);
             Properties.Settings.Default.SharedKernelPath = sharedKernelFolder;
             string infrastructureFolder = ExtractFolder("Infrastructure", lines, solutionFolder, solutionName);
+            Properties.Settings.Default.InfrastructurePath = infrastructureFolder;
+            string localizationFolder = ExtractFolder("Localization", lines, solutionFolder, solutionName);
+            Properties.Settings.Default.LocalizationPath = localizationFolder;
 
             Properties.Settings.Default.Save();
 

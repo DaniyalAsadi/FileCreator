@@ -1,5 +1,9 @@
 using FileCreator.Core;
 using FileCreator.Core.Rewriter;
+using FileCreator.Core.Walker;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Formatting;
 using System.Reflection.Emit;
 namespace FileCreator;
 
@@ -15,7 +19,7 @@ public partial class FileCreatorForm : Form
     private string _unitTestsBasePath = string.Empty;
     private string _sharedKerbalTestsBasePath = string.Empty;
     private string _infrastructureBasePath = string.Empty;
-
+    private string _localizationBasePath = string.Empty;
     public FileCreatorForm()
     {
         InitializeComponent();
@@ -63,10 +67,17 @@ public partial class FileCreatorForm : Form
         _unitTestsBasePath = Properties.Settings.Default.UnitTestPath;
         _sharedKerbalTestsBasePath = Properties.Settings.Default.SharedKernelPath;
         _infrastructureBasePath = Properties.Settings.Default.InfrastructurePath;
-
+        _localizationBasePath = Properties.Settings.Default.LocalizationPath;
         btnGenerate.Enabled =
+            !string.IsNullOrWhiteSpace(_slnPath) &&
             !string.IsNullOrWhiteSpace(_useCasesBasePath) ||
-            !string.IsNullOrWhiteSpace(_webBasePath);
+            !string.IsNullOrWhiteSpace(_webBasePath) ||
+            !string.IsNullOrWhiteSpace(_functionalTestsBasePath) ||
+            !string.IsNullOrWhiteSpace(_unitTestsBasePath)||
+            !string.IsNullOrWhiteSpace(_sharedKerbalTestsBasePath) ||
+            !string.IsNullOrWhiteSpace(_infrastructureBasePath) ||
+            !string.IsNullOrWhiteSpace(_localizationBasePath);
+
     }
 
     private void BtnSettings_Click(object sender, EventArgs e)
@@ -277,6 +288,115 @@ public partial class FileCreatorForm : Form
 
                     break;
                 }
+        }
+    }
+    private async void MenuUpdateEnums_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            menuUpdateEnums.Enabled = false;
+            Cursor = Cursors.WaitCursor;
+
+            await Task.Run(UpdateEnumsInSolution);
+
+            MessageBox.Show(
+                "Enum Display attributes updated successfully.",
+                "Success",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                ex.Message,
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            menuUpdateEnums.Enabled = true;
+            Cursor = Cursors.Default;
+        }
+    }
+    private void UpdateEnumsInSolution()
+    {
+        var solutionPath = Properties.Settings.Default.SolutionPath;
+
+        if (string.IsNullOrWhiteSpace(solutionPath) || !File.Exists(solutionPath))
+            throw new InvalidOperationException("Solution path is not configured.");
+
+        var solutionFolder = Path.GetDirectoryName(solutionPath)!;
+
+        var csFiles = Directory
+            .GetFiles(solutionFolder, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains(@"\bin\") && !f.Contains(@"\obj\"))
+            .ToList();
+
+        foreach (var file in csFiles)
+        {
+            var source = File.ReadAllText(file);
+
+            var tree = CSharpSyntaxTree.ParseText(source);
+            var root = tree.GetRoot();
+
+            var rewriter = new EnumRewriter();
+            var newRoot = rewriter.Visit(root);
+
+            if (!ReferenceEquals(root, newRoot))
+            {
+                var workspace = new AdhocWorkspace();
+                var formatted = Formatter.Format(newRoot, workspace);
+
+                File.WriteAllText(file, formatted.ToFullString());
+            }
+        }
+    }
+    private void MenuUpdateResx_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            var solutionPath = _slnPath;
+
+            if (string.IsNullOrWhiteSpace(solutionPath) || !File.Exists(solutionPath))
+                throw new InvalidOperationException("Solution path is not configured.");
+
+            var solutionFolder = Path.GetDirectoryName(solutionPath)!;
+
+            var resxPath = Path.Combine(_localizationBasePath,
+                "Resources");
+
+            if (!File.Exists(resxPath))
+            {
+                MessageBox.Show("Resx file not found.");
+                return;
+            }
+
+            var collector = new EnumKeyCollector();
+
+            var csFiles = Directory
+                .GetFiles(solutionFolder, "*.cs", SearchOption.AllDirectories)
+                .Where(f => !f.Contains(@"\bin\") && !f.Contains(@"\obj\"))
+                .ToList();
+            foreach (var file in csFiles)
+            {
+                var text = File.ReadAllText(file);
+                var tree = CSharpSyntaxTree.ParseText(text);
+                collector.Visit(tree.GetRoot());
+            }
+
+            var updater = new ResxUpdater();
+
+            foreach (var key in collector.Keys)
+            {
+                updater.EnsureKeyExists(resxPath, key, key);
+            }
+
+            MessageBox.Show("Resx sync completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
         }
     }
 }

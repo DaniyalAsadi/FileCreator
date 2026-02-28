@@ -106,5 +106,17 @@ namespace FileCreator.Properties {
                 this["InfrastructurePath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LocalizationPath {
+            get {
+                return ((string)(this["LocalizationPath"]));
+            }
+            set {
+                this["LocalizationPath"] = value;
+            }
+        }
     }
 }

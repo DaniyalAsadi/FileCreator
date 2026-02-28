@@ -8,6 +8,8 @@ partial class FileCreatorForm
     private ToolStripMenuItem menuFile;
     private ToolStripMenuItem menuSettings;
     private ToolStripMenuItem menuExit;
+    private ToolStripMenuItem menuUpdateResx;
+    private ToolStripMenuItem menuUpdateEnums;
 
     private TextBox txtUseCaseGroup;
     private TextBox txtUseCaseName;
@@ -39,6 +41,8 @@ partial class FileCreatorForm
         menuFile = new ToolStripMenuItem();
         menuSettings = new ToolStripMenuItem();
         menuExit = new ToolStripMenuItem();
+        menuUpdateEnums = new ToolStripMenuItem();
+        menuUpdateResx = new ToolStripMenuItem();
         txtUseCaseGroup = new TextBox();
         txtUseCaseName = new TextBox();
         cmbType = new ComboBox();
@@ -49,6 +53,14 @@ partial class FileCreatorForm
         btnGenerate = new Button();
         cmbResponseType = new ComboBox();
 
+
+
+
+        menuUpdateEnums.Text = "Update Enum Display Attributes";
+        menuUpdateEnums.Click += MenuUpdateEnums_Click;
+
+        menuUpdateResx.Text = "Sync Resx Keys";
+        menuUpdateResx.Click += MenuUpdateResx_Click;
         // -------------------------
         // menuStrip
         // -------------------------
@@ -61,7 +73,12 @@ partial class FileCreatorForm
         menuStrip.ForeColor = Color.Gainsboro;
 
         // menuFile
-        menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuSettings, menuExit });
+        menuFile.DropDownItems.AddRange(new ToolStripItem[] 
+        { 
+            menuSettings, 
+            menuUpdateEnums,        
+            menuUpdateResx, 
+            menuExit });
         menuFile.Text = "File";
         menuFile.BackColor = Color.FromArgb(45, 45, 48);
         menuFile.ForeColor = Color.Gainsboro;
