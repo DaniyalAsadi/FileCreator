@@ -86,24 +86,8 @@ public class MediatorRequestHandlerGenerator
         }
         else
         {
-            
-            string successStatement;
-            if (hasResponse)
-            {
-                successStatement = responseType switch
-                {
-                    ResponseType.Single => $"return Result.Success(new {useCaseName}{type}Response());",
-                    ResponseType.IEnumerable => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>());",
-                    ResponseType.KeyValuePair => $"return Result.Success(Array.Empty<KeyValuePair<Guid,string>>());",
-                    ResponseType.PagedList => $"return Result.Success(Array.Empty<{useCaseName}{type}Response>().ToPagedList(request.PagedRequest.PageIndex,request.PagedRequest.PageSize));",
-                    _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
-                };
 
-            }
-            else
-            {
-                successStatement = "return Result.Success();";
-            }
+            string successStatement = "throw new NotImplementedException();";
 
             var method =
                 MethodDeclaration(

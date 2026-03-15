@@ -2,11 +2,9 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Resources;
-using System.Resources.NetStandard;
 
 namespace FileCreator.Core.Rewriter;
 
@@ -37,6 +35,12 @@ public class EnumRewriter : CSharpSyntaxRewriter
                 SyntaxFactory.TypeOfExpression(SyntaxFactory.IdentifierName("LanguageManager")))
             );
 
+            var orderArgument = SyntaxFactory.AttributeArgument(SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxFactory.IdentifierName("Order"),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                    SyntaxFactory.Literal(node.Members.IndexOf(member)))));
+
 
             // Create the Display attribute using structured syntax
             var displayAttribute = SyntaxFactory.Attribute(
@@ -44,11 +48,12 @@ public class EnumRewriter : CSharpSyntaxRewriter
                 )
                 .WithArgumentList(
                     SyntaxFactory.AttributeArgumentList(
-                        SyntaxFactory.SeparatedList(new[]
-                        {
+                        SyntaxFactory.SeparatedList(
+                        [
                                     displayNameArgument,
-                                    resourceTypeArgument
-                        })
+                                    orderArgument,
+                                    resourceTypeArgument,
+                        ])
                     )
                 );
 
@@ -58,8 +63,7 @@ public class EnumRewriter : CSharpSyntaxRewriter
             );
 
             return newMember;
-        })
-            .ToList();
+        }).ToList();
 
         // Replace the old members with updated ones
         return node.WithMembers(SyntaxFactory.SeparatedList(updatedMembers));
@@ -84,40 +88,5 @@ public class EnumRewriter : CSharpSyntaxRewriter
 
         // Return the member with the filtered attributes
         return member.WithAttributeLists(SyntaxFactory.List(updatedAttributes));
-    }
-}
-public sealed class ResxUpdater
-{
-    public void EnsureKeyExists(
-        string resxPath,
-        string key,
-        string defaultValue = "")
-    {
-        if (!File.Exists(resxPath))
-            throw new FileNotFoundException("Resx file not found.", resxPath);
-
-        var entries = new Dictionary<string, string>();
-
-        using (var reader = new ResXResourceReader(resxPath))
-        {
-            foreach (DictionaryEntry entry in reader)
-            {
-                entries[(string)entry.Key] = entry.Value?.ToString() ?? "";
-            }
-        }
-
-        if (entries.ContainsKey(key))
-            return; // already exists (idempotent)
-
-        entries[key] = defaultValue;
-
-        using var writer = new ResXResourceWriter(resxPath);
-
-        foreach (var kv in entries.OrderBy(e => e.Key, StringComparer.Ordinal))
-        {
-            writer.AddResource(kv.Key, kv.Value);
-        }
-
-        writer.Generate();
     }
 }

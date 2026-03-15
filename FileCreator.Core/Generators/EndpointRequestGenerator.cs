@@ -41,7 +41,7 @@ public class EndpointRequestGenerator
 
         return RoslynHelpers.CompilationUnit(ns, dto,
             useCaseNameSpace,
-            "ECommerce.SharedKernel");
+            "SharedKernel");
     }
 
     private static MethodDeclarationSyntax GenerateMapMethod(

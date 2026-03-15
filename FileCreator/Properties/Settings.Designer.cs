@@ -38,84 +38,12 @@ namespace FileCreator.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string UseCasesPath {
+        public string ProjectPathes {
             get {
-                return ((string)(this["UseCasesPath"]));
+                return ((string)(this["ProjectPathes"]));
             }
             set {
-                this["UseCasesPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string WebPath {
-            get {
-                return ((string)(this["WebPath"]));
-            }
-            set {
-                this["WebPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string FunctionalTestPath {
-            get {
-                return ((string)(this["FunctionalTestPath"]));
-            }
-            set {
-                this["FunctionalTestPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string UnitTestPath {
-            get {
-                return ((string)(this["UnitTestPath"]));
-            }
-            set {
-                this["UnitTestPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SharedKernelPath {
-            get {
-                return ((string)(this["SharedKernelPath"]));
-            }
-            set {
-                this["SharedKernelPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string InfrastructurePath {
-            get {
-                return ((string)(this["InfrastructurePath"]));
-            }
-            set {
-                this["InfrastructurePath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string LocalizationPath {
-            get {
-                return ((string)(this["LocalizationPath"]));
-            }
-            set {
-                this["LocalizationPath"] = value;
+                this["ProjectPathes"] = value;
             }
         }
     }

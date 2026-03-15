@@ -10,7 +10,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace FileCreator;
 
 public sealed class RoslynFileCreator(
-    string solutionName,
+    string projectName,
     GroupName groupName,
     string usecaseName,
     string useCasePath,
@@ -24,7 +24,7 @@ public sealed class RoslynFileCreator(
     ResponseType responseType,
     HttpVerb httpVerb)
 {
-    public string SolutionName { get; } = solutionName;
+    public string ProjectName { get; } = projectName;
     public GroupName GroupName { get; } = groupName;
     public string UsecaseName { get; } = usecaseName;
     public string UseCasePath { get; } = useCasePath;
@@ -73,11 +73,11 @@ public sealed class RoslynFileCreator(
             "Queries",
             GroupName.Feature);
 
-        string usecaseNamespace = $"{SolutionName}.UseCases.{GroupName.Feature}.{(RequestType == RequestType.Command ? "Commands" : "Queries")}.{UsecaseName}";
-        string webNamespace = $"{SolutionName}.Web.EndPoints.{GroupName.Resource}.{UsecaseName}";
-        string functionalNamespace = $"{SolutionName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
-        string unitTestNamespace = $"{SolutionName}.UnitTests.UseCases.{GroupName.Feature}";
-        string infrastructureNamespace = $"{SolutionName}.Infrastructure.Data.Queries.{GroupName.Feature}";
+        string usecaseNamespace = $"{ProjectName}.UseCases.{GroupName.Feature}.{(RequestType == RequestType.Command ? "Commands" : "Queries")}.{UsecaseName}";
+        string webNamespace = $"{ProjectName}.Web.EndPoints.{GroupName.Resource}.{UsecaseName}";
+        string functionalNamespace = $"{ProjectName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
+        string unitTestNamespace = $"{ProjectName}.UnitTests.UseCases.{GroupName.Feature}";
+        string infrastructureNamespace = $"{ProjectName}.Infrastructure.Data.Queries.{GroupName.Feature}";
 
         // ------------------------ MediatorRequest ------------------------
         files.Add(new GeneratedFile(

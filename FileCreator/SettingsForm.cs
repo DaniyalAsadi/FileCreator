@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -38,36 +39,17 @@ public partial class SettingsForm : Form
             return;
         }
 
-        string[] lines = File.ReadAllLines(slnPath);
-        string solutionFolder = Path.GetDirectoryName(slnPath)!;
-        string solutionName = Path.GetFileNameWithoutExtension(slnPath);
 
         try
         {
+            string[] lines = File.ReadAllLines(slnPath);
+            string solutionFolder = Path.GetDirectoryName(slnPath)!;
+            string solutionName = Path.GetFileNameWithoutExtension(slnPath);
+            var projects = ExtractProjects(lines, solutionFolder);
+            var projectLines = JsonConvert.SerializeObject(projects, Formatting.Indented);
             Properties.Settings.Default.SolutionPath = slnPath;
-            // --- UseCases Project ---
-            string useCasesFolder = ExtractFolder("UseCases",lines, solutionFolder, solutionName);
-
-            Properties.Settings.Default.UseCasesPath = useCasesFolder;
-
-            string webFolder = ExtractFolder("Web", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.WebPath = webFolder;
-
-            string endpointFolder = Path.Combine(webFolder, "EndPoints");
-            Directory.CreateDirectory(endpointFolder);
-            string unitTestsFolder = ExtractFolder("UnitTests", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.UnitTestPath = unitTestsFolder;
-            string functionalTestFolder = ExtractFolder("FunctionalTests", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.FunctionalTestPath = functionalTestFolder;
-            string sharedKernelFolder = ExtractFolder("SharedKernel", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.SharedKernelPath = sharedKernelFolder;
-            string infrastructureFolder = ExtractFolder("Infrastructure", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.InfrastructurePath = infrastructureFolder;
-            string localizationFolder = ExtractFolder("Localization", lines, solutionFolder, solutionName);
-            Properties.Settings.Default.LocalizationPath = localizationFolder;
-
+            Properties.Settings.Default.ProjectPathes = projectLines;
             Properties.Settings.Default.Save();
-
             var result = MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             if (result == DialogResult.OK)
             {
@@ -79,31 +61,34 @@ public partial class SettingsForm : Form
             MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             ClearSettings();
         }
-
-        static string ExtractFolder(string projectName,string[] lines, string solutionFolder, string soloutionName)
+        static Dictionary<string, string> ExtractProjects(string[] lines, string solutionFolder)
         {
-            string useCasesPattern = $@"Project\(""\{{[A-F0-9\-]+\}}""\)\s*=\s*""{Regex.Escape(soloutionName)}\.{Regex.Escape(projectName)}"",\s*""(?<path>[^""]+\.csproj)""";
-            var useCasesMatch = lines.Select(l => Regex.Match(l, useCasesPattern))
-                                     .FirstOrDefault(m => m.Success) ?? throw new FileNotFoundException($"{soloutionName}.{projectName} project not found in Solution.");
-            string useCasesRelative = useCasesMatch.Groups["path"].Value;
-            string useCasesFolder = Path.Combine(solutionFolder, Path.GetDirectoryName(useCasesRelative)!);
-            string useCasesCsproj = Path.Combine(useCasesFolder, Path.GetFileName(useCasesRelative));
+            Dictionary<string, string> properties = new Dictionary<string, string>();
+            string useCasesPattern = @"Project\(""\{[A-F0-9\-]+\}""\)\s*=\s*""(?<projectName>[^""]+)"",\s*""(?<path>[^""]+\.csproj)""";
 
-            if (!File.Exists(useCasesCsproj))
-                throw new FileNotFoundException($"{soloutionName}.{projectName}.csproj file not found.");
-            return useCasesFolder;
+            var useCasesMatches = lines.Select(l => Regex.Match(l, useCasesPattern)).Where(e => e.Success).ToList();
+            foreach (var line in useCasesMatches)
+            {
+                string path = line.Groups["path"].Value;
+                string projectName = line.Groups["projectName"].Value;
+                string useCasesFolder = Path.Combine(solutionFolder, Path.GetDirectoryName(path)!);
+                string useCasesCsproj = Path.Combine(useCasesFolder, Path.GetFileName(path));
+
+                if (!File.Exists(useCasesCsproj))
+                    throw new FileNotFoundException($"{projectName}.csproj file not found.");
+
+                properties.Add(projectName, path);
+            }
+            return properties;
         }
+
     }
 
     // کمکی برای پاک کردن مقادیر Settings
     private static void ClearSettings()
     {
         Properties.Settings.Default.SolutionPath = string.Empty;
-        Properties.Settings.Default.UseCasesPath = string.Empty;
-        Properties.Settings.Default.FunctionalTestPath = string.Empty;
-        Properties.Settings.Default.UnitTestPath = string.Empty;
-        Properties.Settings.Default.WebPath = string.Empty;
-        Properties.Settings.Default.InfrastructurePath = string.Empty;
+        Properties.Settings.Default.ProjectPathes = string.Empty;
         Properties.Settings.Default.Save();
     }
 

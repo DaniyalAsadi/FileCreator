@@ -4,7 +4,9 @@ using FileCreator.Core.Walker;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
+using Newtonsoft.Json;
 using System.Reflection.Emit;
+using static System.Net.Mime.MediaTypeNames;
 namespace FileCreator;
 
 public partial class FileCreatorForm : Form
@@ -12,6 +14,7 @@ public partial class FileCreatorForm : Form
     private PreviewWorkspace? _workspace;
 
     private string _slnPath = string.Empty;
+    private string _projectName = string.Empty;
     private string _solutionName = string.Empty;
     private string _useCasesBasePath = string.Empty;
     private string _webBasePath = string.Empty;
@@ -23,7 +26,8 @@ public partial class FileCreatorForm : Form
     public FileCreatorForm()
     {
         InitializeComponent();
-        LoadSettings();
+        LoadSettings(cmbProjectName.Text);
+        SetDefaultValue();
     }
 
     // ----------------------------------------------------
@@ -32,7 +36,7 @@ public partial class FileCreatorForm : Form
     protected override async void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        if(string.IsNullOrWhiteSpace(_slnPath))
+        if (string.IsNullOrWhiteSpace(_slnPath))
         {
             MessageBox.Show("Please set the solution path in settings.");
             return;
@@ -56,26 +60,30 @@ public partial class FileCreatorForm : Form
     // ----------------------------------------------------
     // SETTINGS
     // ----------------------------------------------------
-    private void LoadSettings()
+    private void LoadSettings(string projectName)
     {
+        Dictionary<string, string> projects = JsonConvert.DeserializeObject<Dictionary<string, string>>(Properties.Settings.Default.ProjectPathes) ?? [];
         _slnPath = Properties.Settings.Default.SolutionPath;
         _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
+        _projectName = projectName;
+        string solutionFolder = Path.GetDirectoryName(_slnPath)!;
+        
 
-        _useCasesBasePath = Properties.Settings.Default.UseCasesPath;
-        _webBasePath = Properties.Settings.Default.WebPath;
-        _functionalTestsBasePath = Properties.Settings.Default.FunctionalTestPath;
-        _unitTestsBasePath = Properties.Settings.Default.UnitTestPath;
-        _sharedKerbalTestsBasePath = Properties.Settings.Default.SharedKernelPath;
-        _infrastructureBasePath = Properties.Settings.Default.InfrastructurePath;
-        _localizationBasePath = Properties.Settings.Default.LocalizationPath;
+        _useCasesBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.UseCases") ?? string.Empty)??string.Empty);
+        _webBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.Web") ?? string.Empty)??string.Empty);
+        _functionalTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.FunctionalTests") ?? string.Empty)??string.Empty);
+        _unitTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.UnitTests") ?? string.Empty)??string.Empty);
+        _infrastructureBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.Infrastructure") ?? string.Empty)??string.Empty);
+        _sharedKerbalTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault("SharedKernel") ?? string.Empty)??string.Empty);
+        _localizationBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault("Localization") ?? string.Empty)??string.Empty);
         btnGenerate.Enabled =
             !string.IsNullOrWhiteSpace(_slnPath) &&
-            !string.IsNullOrWhiteSpace(_useCasesBasePath) ||
-            !string.IsNullOrWhiteSpace(_webBasePath) ||
-            !string.IsNullOrWhiteSpace(_functionalTestsBasePath) ||
-            !string.IsNullOrWhiteSpace(_unitTestsBasePath)||
-            !string.IsNullOrWhiteSpace(_sharedKerbalTestsBasePath) ||
-            !string.IsNullOrWhiteSpace(_infrastructureBasePath) ||
+            !string.IsNullOrWhiteSpace(_useCasesBasePath) &&
+            !string.IsNullOrWhiteSpace(_webBasePath) &&
+            !string.IsNullOrWhiteSpace(_functionalTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_unitTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_sharedKerbalTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_infrastructureBasePath) &&
             !string.IsNullOrWhiteSpace(_localizationBasePath);
 
     }
@@ -84,7 +92,7 @@ public partial class FileCreatorForm : Form
     {
         using var frm = new SettingsForm();
         frm.ShowDialog();
-        LoadSettings();
+        LoadSettings(cmbProjectName.Text);
     }
 
     // ----------------------------------------------------
@@ -155,7 +163,7 @@ public partial class FileCreatorForm : Form
 
             // 1️⃣ Generate Roslyn Files (memory only)
             var generator = new RoslynFileCreator(
-                solutionName: _solutionName,
+                projectName: _projectName,
                 groupName: group,
                 usecaseName: useCaseName,
                 useCasePath: _useCasesBasePath,
@@ -326,10 +334,10 @@ public partial class FileCreatorForm : Form
         if (string.IsNullOrWhiteSpace(solutionPath) || !File.Exists(solutionPath))
             throw new InvalidOperationException("Solution path is not configured.");
 
-        var solutionFolder = Path.GetDirectoryName(solutionPath)!;
+        var srcPath = Path.Combine(Directory.GetParent(_slnPath)?.FullName!, _solutionName, _projectName, "src");
 
         var csFiles = Directory
-            .GetFiles(solutionFolder, "*.cs", SearchOption.AllDirectories)
+            .GetFiles(srcPath, "*.cs", SearchOption.AllDirectories)
             .Where(f => !f.Contains(@"\bin\") && !f.Contains(@"\obj\"))
             .ToList();
 
@@ -356,26 +364,22 @@ public partial class FileCreatorForm : Form
     {
         try
         {
-            var solutionPath = _slnPath;
+            var resxPathes = Directory.GetFiles(Path.Combine(_localizationBasePath,
+                "Resources"), "*.resx");
+            var resxDesignPath = Directory.GetFiles(Path.Combine(_localizationBasePath,
+                "Resources"), "*.cs").First();
 
-            if (string.IsNullOrWhiteSpace(solutionPath) || !File.Exists(solutionPath))
-                throw new InvalidOperationException("Solution path is not configured.");
-
-            var solutionFolder = Path.GetDirectoryName(solutionPath)!;
-
-            var resxPath = Path.Combine(_localizationBasePath,
-                "Resources");
-
-            if (!File.Exists(resxPath))
+            if (resxPathes.Length == 0 || !File.Exists(resxPathes.First()))
             {
                 MessageBox.Show("Resx file not found.");
                 return;
             }
 
             var collector = new EnumKeyCollector();
+            var srcPath = Path.Combine(Directory.GetParent(_slnPath)?.FullName!, _solutionName,_projectName, "src");
 
             var csFiles = Directory
-                .GetFiles(solutionFolder, "*.cs", SearchOption.AllDirectories)
+                .GetFiles(srcPath, "*.cs", SearchOption.AllDirectories)
                 .Where(f => !f.Contains(@"\bin\") && !f.Contains(@"\obj\"))
                 .ToList();
             foreach (var file in csFiles)
@@ -387,16 +391,56 @@ public partial class FileCreatorForm : Form
 
             var updater = new ResxUpdater();
 
-            foreach (var key in collector.Keys)
-            {
-                updater.EnsureKeyExists(resxPath, key, key);
-            }
+            foreach (var resxPath in resxPathes)
+                foreach (var key in collector.Keys)
+                {
+                    ResxUpdater.EnsureKeyExists(resxPath, key, key);
+                }
+
+            var designFile = File.ReadAllText(resxDesignPath);
+            var designTree = CSharpSyntaxTree.ParseText(designFile);
+            var designWriter = new ResxDesignRewriter("Enum_Authentication_Test");
+
+            var newDesignClass = designWriter.Visit(designTree.GetRoot());
+
+            var newClass = newDesignClass.NormalizeWhitespace().ToFullString();
+
+
+
+
 
             MessageBox.Show("Resx sync completed successfully.");
         }
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message);
+        }
+    }
+
+    private void CmbProjectName_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        var item = cmbProjectName.SelectedItem?.ToString();
+        if (item != null)
+        {
+            LoadSettings(item);
+        }
+
+    }
+
+    private void btnGenerate_EnabledChanged(object sender, EventArgs e)
+    {
+        if (sender is Button button)
+        {
+            if (button.Enabled)
+            {
+                button.BackColor = Color.FromArgb(0, 122, 204);
+                button.ForeColor = Color.White;
+            }
+            else
+            {
+                button.BackColor = Color.LightGray;
+                button.ForeColor = Color.DarkGray; 
+            }
         }
     }
 }
