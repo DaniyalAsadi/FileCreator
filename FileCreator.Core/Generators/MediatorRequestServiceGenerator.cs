@@ -15,6 +15,7 @@ public class MediatorRequestServiceGenerator
             ResponseType.Single => $"Task<{useCaseName}{type}Response?>",
             ResponseType.IEnumerable => $"Task<IEnumerable<{useCaseName}{type}Response>>",
             ResponseType.PagedList => $"Task<PagedList<{useCaseName}{type}Response>>",
+            ResponseType.KeyValuePair => $"Task<Result<IEnumerable<KeyValuePair<Guid, string>>>>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
         var identifierName = responseType switch
@@ -22,21 +23,25 @@ public class MediatorRequestServiceGenerator
             ResponseType.Single => $"GetAsync",
             ResponseType.IEnumerable => "ListAsync",
             ResponseType.PagedList => "ListAsync",
+            ResponseType.KeyValuePair => "ListAsync",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
-        ParameterListSyntax parameterList = 
+        ParameterListSyntax parameterList =
             responseType switch
             {
-                ResponseType.Single or ResponseType.IEnumerable => 
+                ResponseType.Single or ResponseType.IEnumerable =>
                 ParameterList([
                     Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
                     ]),
-                ResponseType.PagedList => 
+                ResponseType.PagedList =>
                 ParameterList([
                         Parameter(Identifier("filter")).WithType(ParseTypeName($"{useCaseName}{type}Filter")),
                         Parameter(Identifier("pagedRequest")).WithType(ParseTypeName("PagedRequest")),
                         Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
                         ]),
+                ResponseType.KeyValuePair => ParameterList([
+                    Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
+                    ]),
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         var method = MethodDeclaration(ParseTypeName(resultType),
