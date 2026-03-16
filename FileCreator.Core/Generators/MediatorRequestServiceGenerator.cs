@@ -49,8 +49,7 @@ public class MediatorRequestServiceGenerator
         var @interface =
             InterfaceDeclaration($"I{useCaseName}Service")
                 .AddModifiers(
-                Token(SyntaxKind.PublicKeyword),
-                Token(SyntaxKind.SealedKeyword))
+                Token(SyntaxKind.PublicKeyword))
                 .AddMembers(method);
 
 
