@@ -122,20 +122,11 @@ public class EndpointTestGenerator
         if (hasResponse)
         {
             statements.Add(
-            ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName("_"),
-                    InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName("response"),
-                                        IdentifierName("Should")
-                                    ),
-                                    IdentifierName("NotBeNull")
-                                    )))));
+            ExpressionStatement(Chain
+                .From("response")
+                .Call("Should")
+                .Call("NotBeNull")
+                .Build()));
         }
 
         return MethodDeclaration(
@@ -163,8 +154,9 @@ public class EndpointTestGenerator
                 ResponseType.Single => "GetSingleAsync",
                 ResponseType.IEnumerable => "GetEnumerableAsync",
                 ResponseType.PagedList => "GetPagedListAsync",
+                ResponseType.KeyValuePair => "GetEnumerableAsync",
                 _ => throw new NotImplementedException(),
-            }:
+            } :
             "GetStatusAsync",
             HttpVerb.DELETE => "DeleteAsync",
             HttpVerb.POST => "PostBodyAsync",
