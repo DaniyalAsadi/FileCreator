@@ -67,11 +67,10 @@ public class EndpointTestGenerator
             SingletonSeparatedList(
                 Attribute(IdentifierName("Fact"))));
 
-        var statements = new List<StatementSyntax>();
-
-        // var route = $"{ApiRoutes.Group.UseCase.RoutePattern}";
-        statements.Add(
-    LocalDeclarationStatement(
+        var statements = new List<StatementSyntax>
+        {
+            // var route = $"{ApiRoutes.Group.UseCase.RoutePattern}";
+            LocalDeclarationStatement(
         VariableDeclaration(IdentifierName("var"))
         .AddVariables(
             VariableDeclarator("route")
@@ -97,7 +96,7 @@ public class EndpointTestGenerator
             )
         )
     )
-);
+        };
 
 
         // var request = new XxxRequest();
@@ -179,7 +178,7 @@ public class EndpointTestGenerator
 
         SimpleNameSyntax methodNameSyntax;
 
-        if (genericArgs.Any())
+        if (genericArgs.Count != 0)
         {
             // Client.Method<T>()
             methodNameSyntax =

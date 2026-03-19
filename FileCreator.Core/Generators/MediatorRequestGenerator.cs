@@ -26,6 +26,7 @@ public class MediatorRequestGenerator
                 ResponseType.Single => $"Result<{useCaseName}{type}Response>",
                 ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
                 ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
+                ResponseType.KeyValuePair => $"Result<IEnumerable<KeyValuePair<Guid, string>>>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         }

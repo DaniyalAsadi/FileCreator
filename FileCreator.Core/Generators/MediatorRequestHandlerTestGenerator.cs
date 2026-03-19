@@ -86,15 +86,15 @@ public class MediatorRequestHandlerTestGenerator
                                         IdentifierName("Handle")))
                                 .WithArgumentList(
                                     ArgumentList(
-                                        SeparatedList(new[]
-                                        {
+                                        SeparatedList(
+                                        [
                                             Argument(IdentifierName("request")),
                                             Argument(
                                                 MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
                                                     IdentifierName("CancellationToken"),
                                                     IdentifierName("None")))
-                                        })))))))),
+                                        ])))))))),
 
             ExpressionStatement(Chain
                 .From("result")
