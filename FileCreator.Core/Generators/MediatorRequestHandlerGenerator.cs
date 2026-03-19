@@ -82,6 +82,9 @@ public class MediatorRequestHandlerGenerator
                                 RequestType.Query => $"IQueryHandler<{useCaseName}{type}, {resultType}>",
                                 _ => throw new NotImplementedException(),
                             })))
+                    .WithParameterList(ParameterList([
+                        Parameter(Identifier("service")).WithType(IdentifierName($"I{useCaseName}Service"))
+                        ]))
                     .AddMembers(method);
         }
         else

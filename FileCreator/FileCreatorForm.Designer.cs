@@ -106,7 +106,7 @@ partial class FileCreatorForm
         cmbProjectName.BackColor = Color.FromArgb(45, 45, 48);
         cmbProjectName.DropDownStyle = ComboBoxStyle.DropDownList;
         cmbProjectName.ForeColor = Color.Gainsboro;
-        cmbProjectName.Items.AddRange(new object[] { "UserManagement", "FileStore" });
+        cmbProjectName.Items.AddRange(new object[] { "UserManagement", "FileStore" , "AuditLogging" });
         cmbProjectName.Name = "cmbProjectName";
         cmbProjectName.Size = new Size(121, 23);
         cmbProjectName.SelectedIndexChanged += CmbProjectName_SelectedIndexChanged;
@@ -254,8 +254,8 @@ partial class FileCreatorForm
     {
         cmbProjectName.SelectedIndex = 0;
         txtUseCaseGroup.Text = "File";
-        txtUseCaseName.Text = "Upload";
-        txtRoute.Text = "files/upload";
+        txtUseCaseName.Text = "GetFile";
+        txtRoute.Text = "files/{image-id:guid}";
         cmbType.SelectedIndex = 0;
         cmbVerb.SelectedIndex = 0;
         cmbResponseType.SelectedIndex = 0;
@@ -264,3 +264,4 @@ partial class FileCreatorForm
     }
 
 }
+    
