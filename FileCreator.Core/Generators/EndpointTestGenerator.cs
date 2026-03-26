@@ -15,6 +15,7 @@ public class EndpointTestGenerator
 {
     public static CompilationUnitSyntax Generate(
         string ns,
+        string useCaseNameSpace,
         string webNameSpace,
         GroupName groupName,
         string useCaseName,
@@ -46,7 +47,7 @@ public class EndpointTestGenerator
                 responseType,
                 httpVerb));
 
-        return RoslynHelpers.CompilationUnit(ns, classDecl, webNameSpace);
+        return RoslynHelpers.CompilationUnit(ns, classDecl, useCaseNameSpace, webNameSpace);
     }
 
     // ---------- Test Method ----------
@@ -170,7 +171,7 @@ public class EndpointTestGenerator
 
         var genericArgs = new List<TypeSyntax>();
 
-        if (hasRequest && hasResponse)
+        if ((requestType == RequestType.Command && hasRequest) && hasResponse)
             genericArgs.Add(IdentifierName($"{useCaseName}Request"));
 
         if (hasResponse)

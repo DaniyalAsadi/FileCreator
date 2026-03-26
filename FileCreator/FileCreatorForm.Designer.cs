@@ -106,9 +106,10 @@ partial class FileCreatorForm
         cmbProjectName.BackColor = Color.FromArgb(45, 45, 48);
         cmbProjectName.DropDownStyle = ComboBoxStyle.DropDownList;
         cmbProjectName.ForeColor = Color.Gainsboro;
-        cmbProjectName.Items.AddRange(new object[] { "UserManagement", "FileStore" , "AuditLogging" });
+        cmbProjectName.Items.AddRange(new object[] { "UserManagement", "FileStore" , "AuditLogging", "TicketManagement" });
         cmbProjectName.Name = "cmbProjectName";
         cmbProjectName.Size = new Size(121, 23);
+        cmbProjectName.SelectedIndex = 0;
         cmbProjectName.SelectedIndexChanged += CmbProjectName_SelectedIndexChanged;
         // 
         // txtUseCaseGroup
@@ -207,6 +208,7 @@ partial class FileCreatorForm
         btnGenerate.TabIndex = 9;
         btnGenerate.Text = "Generate UseCase + Endpoint Files";
         btnGenerate.UseVisualStyleBackColor = false;
+        btnGenerate.Enabled = true;
         btnGenerate.EnabledChanged += btnGenerate_EnabledChanged;
         btnGenerate.Click += BtnGenerate_Click;
         // 
@@ -252,10 +254,10 @@ partial class FileCreatorForm
     }
     private void SetDefaultValue()
     {
-        cmbProjectName.SelectedIndex = 0;
-        txtUseCaseGroup.Text = "File";
-        txtUseCaseName.Text = "GetFile";
-        txtRoute.Text = "files/{image-id:guid}";
+        cmbProjectName.SelectedIndex = 2;
+        txtUseCaseGroup.Text = "ErrorLog";
+        txtUseCaseName.Text = "Create";
+        txtRoute.Text = "error-logs";
         cmbType.SelectedIndex = 0;
         cmbVerb.SelectedIndex = 0;
         cmbResponseType.SelectedIndex = 0;

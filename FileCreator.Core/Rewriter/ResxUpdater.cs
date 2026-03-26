@@ -33,7 +33,6 @@ public sealed class ResxUpdater
             return; // already exists (idempotent)
 
         entries[key] = defaultValue;
-
         using var writer = new ResXResourceWriter(resxPath);
 
         foreach (var kv in entries.OrderBy(e => e.Key, StringComparer.Ordinal))

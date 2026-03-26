@@ -71,7 +71,7 @@ public class EndpointRequestGenerator
 
             // new {UseCase}Filter() { }
             var filterObject =
-                ObjectCreationExpression(ParseTypeName($"{useCaseName}Filter"))
+                ObjectCreationExpression(ParseTypeName($"{useCaseName}{type}Filter"))
                 .WithArgumentList(ArgumentList())
                 .WithInitializer(
                     InitializerExpression(SyntaxKind.ObjectInitializerExpression));

@@ -133,12 +133,13 @@ public sealed class ApiRoutesRewriter(
             .WithArgumentList(
                 ArgumentList(SeparatedList(
                 [
-                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(route))),
-                    Argument(IdentifierName("Tag")),
-                    Argument(MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName("EndpointSecurityStore"),
-                        IdentifierName("Anonymous")))
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(""))).WithNameColon(NameColon(IdentifierName("name"))),
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(""))).WithNameColon(NameColon(IdentifierName("displayName"))),
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(route))).WithNameColon(NameColon(IdentifierName("route"))),
+                    Argument(IdentifierName("Tag")).WithNameColon(NameColon(IdentifierName("tag"))),
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(""))).WithNameColon(NameColon(IdentifierName("summary"))),
+                    Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,IdentifierName("EndpointSecurityStore"),IdentifierName("Anonymous"))).WithNameColon(NameColon(IdentifierName("security"))),
+                    Argument(LiteralExpression(SyntaxKind.StringLiteralExpression,Literal(""))).WithNameColon(NameColon(IdentifierName("description"))),
                 ])));
 
         var equalsClause =

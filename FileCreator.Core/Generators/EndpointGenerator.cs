@@ -72,7 +72,6 @@ public class EndpointGenerator
     {
         var statements = new[]
         {
-        ParseStatement($"Tags(ApiRoutes.{group}.Tag);"),
         ParseStatement($"Specify(ApiRoutes.{group}.{useCaseName});"),
         CreateSummaryStatement(hasResponse,responseType)
         };
@@ -90,32 +89,6 @@ public class EndpointGenerator
         // Create the inner statements inside the lambda
         var statements = new List<StatementSyntax>
         {
-            // s.Summary = "Creates a new communication entry.";
-            ExpressionStatement(
-        AssignmentExpression(
-            SyntaxKind.SimpleAssignmentExpression,
-            MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName("s"),
-                IdentifierName("Summary")),
-            LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(""))
-        )
-    ),
-
-            // s.Description = "This endpoint allows for the creation of a new communication entry with a title, description, order, and state visibility.";
-            ExpressionStatement(
-        AssignmentExpression(
-            SyntaxKind.SimpleAssignmentExpression,
-            MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName("s"),
-                IdentifierName("Description")),
-            LiteralExpression(
-                SyntaxKind.StringLiteralExpression,
-                Literal("")
-            )
-        )
-    ),
             CreateResponseStatement(responseType, hasResponse)
         };
 

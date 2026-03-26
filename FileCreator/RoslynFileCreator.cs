@@ -149,7 +149,7 @@ public sealed class RoslynFileCreator(
         // ------------------------ Tests ------------------------
         files.Add(new GeneratedFile(
             Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
-            EndpointTestGenerator.Generate(functionalNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
+            EndpointTestGenerator.Generate(functionalNamespace, usecaseNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
         ));
 
         files.Add(new GeneratedFile(

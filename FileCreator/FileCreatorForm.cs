@@ -67,15 +67,21 @@ public partial class FileCreatorForm : Form
         _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
         _projectName = projectName;
         string solutionFolder = Path.GetDirectoryName(_slnPath)!;
-        
 
-        _useCasesBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.UseCases") ?? string.Empty)??string.Empty);
-        _webBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.Web") ?? string.Empty)??string.Empty);
-        _functionalTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.FunctionalTests") ?? string.Empty)??string.Empty);
-        _unitTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.UnitTests") ?? string.Empty)??string.Empty);
-        _infrastructureBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault($"{projectName}.Infrastructure") ?? string.Empty)??string.Empty);
-        _sharedKerbalTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault("SharedKernel") ?? string.Empty)??string.Empty);
-        _localizationBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(projects.GetValueOrDefault("Localization") ?? string.Empty)??string.Empty);
+        var useCasePath = projects.GetValueOrDefault($"{projectName}.UseCases");
+        _useCasesBasePath = useCasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(useCasePath) ?? string.Empty) : string.Empty;
+        var webPath = projects.GetValueOrDefault($"{projectName}.Web");
+        _webBasePath = webPath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(webPath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var functionalTestsBasePath = projects.GetValueOrDefault($"{projectName}.FunctionalTests");
+        _functionalTestsBasePath = functionalTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(functionalTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var unitTestsBasePath = projects.GetValueOrDefault($"{projectName}.UnitTests");
+        _unitTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(unitTestsBasePath ?? string.Empty) ?? string.Empty);
+        var infrastructureBasePath = projects.GetValueOrDefault($"{projectName}.Infrastructure");
+        _infrastructureBasePath = infrastructureBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(infrastructureBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var sharedKerbalTestsBasePath = projects.GetValueOrDefault("SharedKernel");
+        _sharedKerbalTestsBasePath = sharedKerbalTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKerbalTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var localizationBasePath = projects.GetValueOrDefault("Localization");
+        _localizationBasePath = localizationBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(localizationBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
         btnGenerate.Enabled =
             !string.IsNullOrWhiteSpace(_slnPath) &&
             !string.IsNullOrWhiteSpace(_useCasesBasePath) &&
@@ -376,7 +382,7 @@ public partial class FileCreatorForm : Form
             }
 
             var collector = new EnumKeyCollector();
-            var srcPath = Path.Combine(Directory.GetParent(_slnPath)?.FullName!, _solutionName,_projectName, "src");
+            var srcPath = Path.Combine(Directory.GetParent(_slnPath)?.FullName!, _solutionName, _projectName, "src");
 
             var csFiles = Directory
                 .GetFiles(srcPath, "*.cs", SearchOption.AllDirectories)
@@ -439,7 +445,8 @@ public partial class FileCreatorForm : Form
             else
             {
                 button.BackColor = Color.LightGray;
-                button.ForeColor = Color.DarkGray; 
+                button.ForeColor = Color.DarkGray;
+                MessageBox.Show("Solution path is not configured.", "sln Path Required", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
