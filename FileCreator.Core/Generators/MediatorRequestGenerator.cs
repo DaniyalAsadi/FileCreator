@@ -18,31 +18,36 @@ public class MediatorRequestGenerator
     ResponseType responseType)
     {
         // ---------------- Result Type ----------------
-        string resultType;
+        string resultType = string.Empty;
         if (hasResponse)
         {
             resultType = responseType switch
             {
-                ResponseType.Single => $"Result<{useCaseName}{type}Response>",
-                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
-                ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
-                ResponseType.KeyValuePair => $"Result<IEnumerable<KeyValuePair<Guid, string>>>",
+                ResponseType.Single => $"{useCaseName}{type}Response",
+                ResponseType.IEnumerable => $"IEnumerable<{useCaseName}{type}Response>",
+                ResponseType.PagedList => $"PagedList<{useCaseName}{type}Response>",
+                ResponseType.KeyValuePair => $"IEnumerable<KeyValuePair<Guid, string>>>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         }
-        else
-        {
-            resultType = "Result";
-        }
 
         // ---------------- Base Interface ----------------
-        var baseType = SimpleBaseType(
-            ParseTypeName(type switch
+        TypeSyntax typeName = hasResponse
+            ? ParseTypeName(type switch
             {
                 RequestType.Command => $"ICommand<{resultType}>",
                 RequestType.Query => $"IQuery<{resultType}>",
                 _ => throw new NotImplementedException(),
-            }));
+            })
+            : ParseTypeName(type switch
+            {
+                RequestType.Command => $"ICommand",
+                RequestType.Query => $"IQuery",
+                _ => throw new NotImplementedException(),
+            });
+
+
+        var baseType = SimpleBaseType(typeName);
 
         // ---------------- Class ----------------
         var classDecl = ClassDeclaration($"{useCaseName}{type}")

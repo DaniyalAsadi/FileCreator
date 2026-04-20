@@ -14,6 +14,7 @@ public class MediatorRequestHandlerGenerator
 {
     public static CompilationUnitSyntax Generate(
         string ns,
+        GroupName groupName,
         string useCaseName,
         RequestType type,
         bool hasResponse,
@@ -24,16 +25,16 @@ public class MediatorRequestHandlerGenerator
         {
             resultType = responseType switch
             {
-                ResponseType.Single => $"Result<{useCaseName}{type}Response>",
-                ResponseType.IEnumerable => $"Result<IEnumerable<{useCaseName}{type}Response>>",
-                ResponseType.KeyValuePair => $"Result<IEnumerable<KeyValuePair<Guid,string>>>",
-                ResponseType.PagedList => $"Result<PagedList<{useCaseName}{type}Response>>",
+                ResponseType.Single => $"{useCaseName}{type}Response",
+                ResponseType.IEnumerable => $"IEnumerable<{useCaseName}{type}Response>",
+                ResponseType.KeyValuePair => $"IEnumerable<KeyValuePair<Guid,string>>",
+                ResponseType.PagedList => $"PagedList<{useCaseName}{type}Response>",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
         }
         else
         {
-            resultType = "Result";
+            resultType = string.Empty;
         }
         ClassDeclarationSyntax handler;
         if (type == RequestType.Query)
@@ -46,9 +47,12 @@ public class MediatorRequestHandlerGenerator
                 ResponseType.PagedList => "ListAsync",
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
             };
+            TypeSyntax returnType =
+                hasResponse ?
+                ParseTypeName($"ValueTask<Result<{resultType}>>") :
+                ParseTypeName($"ValueTask<Result>");
             var method =
-                MethodDeclaration(
-                        ParseTypeName($"ValueTask<{resultType}>"), "Handle")
+                MethodDeclaration(returnType, "Handle")
                     .AddModifiers(
                     Token(SyntaxKind.PublicKeyword),
                     Token(SyntaxKind.AsyncKeyword))
@@ -66,22 +70,32 @@ public class MediatorRequestHandlerGenerator
                                 IdentifierName("service"),
                                 IdentifierName(identifierName)))
                         .AddArgumentListArguments(
+                            Argument(IdentifierName("request")),
                             Argument(IdentifierName("cancellationToken"))))))
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
-            handler =
-                ClassDeclaration($"{useCaseName}{type}Handler")
-                    .AddModifiers(
-                    Token(SyntaxKind.PublicKeyword),
-                    Token(SyntaxKind.SealedKeyword))
-                    .AddBaseListTypes(
-                        SimpleBaseType(
+            SimpleBaseTypeSyntax items =
+                hasResponse ?
+                            SimpleBaseType(
                             ParseTypeName(type switch
                             {
                                 RequestType.Command => $"ICommandHandler<{useCaseName}{type}, {resultType}>",
                                 RequestType.Query => $"IQueryHandler<{useCaseName}{type}, {resultType}>",
                                 _ => throw new NotImplementedException(),
-                            })))
+                            })) :
+                            SimpleBaseType(
+                            ParseTypeName(type switch
+                            {
+                                RequestType.Command => $"ICommandHandler<{useCaseName}{type}>",
+                                RequestType.Query => $"IQueryHandler<{useCaseName}{type}>",
+                                _ => throw new NotImplementedException(),
+                            }));
+            handler =
+                ClassDeclaration($"{useCaseName}{type}Handler")
+                    .AddModifiers(
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.SealedKeyword))
+                    .AddBaseListTypes(items)
                     .WithParameterList(ParameterList([
                         Parameter(Identifier("service")).WithType(IdentifierName($"I{useCaseName}Service"))
                         ]))
@@ -92,9 +106,13 @@ public class MediatorRequestHandlerGenerator
 
             string successStatement = "throw new NotImplementedException();";
 
+            TypeSyntax returnType =
+                hasResponse ?
+                ParseTypeName($"ValueTask<Result<{resultType}>>") :
+                ParseTypeName($"ValueTask<Result>");
             var method =
                 MethodDeclaration(
-                        ParseTypeName($"ValueTask<{resultType}>"), "Handle")
+                        returnType, "Handle")
                     .AddModifiers(
                     Token(SyntaxKind.PublicKeyword),
                     Token(SyntaxKind.AsyncKeyword))
@@ -105,19 +123,40 @@ public class MediatorRequestHandlerGenerator
                             .WithType(ParseTypeName("CancellationToken")))
                     .WithBody(Block(ParseStatement(successStatement)));
 
+            SimpleBaseTypeSyntax items =
+                hasResponse ?
+                SimpleBaseType(
+                ParseTypeName(type switch
+                {
+                    RequestType.Command => $"ICommandHandler<{useCaseName}{type}, {resultType}>",
+                    RequestType.Query => $"IQueryHandler<{useCaseName}{type}, {resultType}>",
+                    _ => throw new NotImplementedException(),
+                })) :
+                SimpleBaseType(
+                ParseTypeName(type switch
+                {
+                    RequestType.Command => $"ICommandHandler<{useCaseName}{type}>",
+                    RequestType.Query => $"IQueryHandler<{useCaseName}{type}>",
+                    _ => throw new NotImplementedException(),
+                }));
+
             handler =
                 ClassDeclaration($"{useCaseName}{type}Handler")
                     .AddModifiers(
                     Token(SyntaxKind.PublicKeyword),
                     Token(SyntaxKind.SealedKeyword))
-                    .AddBaseListTypes(
-                        SimpleBaseType(
-                            ParseTypeName(type switch
-                            {
-                                RequestType.Command => $"ICommandHandler<{useCaseName}{type}, {resultType}>",
-                                RequestType.Query => $"IQueryHandler<{useCaseName}{type}, {resultType}>",
-                                _ => throw new NotImplementedException(),
-                            })))
+                    .WithParameterList(ParameterList(
+                        SeparatedList([
+                            Parameter(
+                                Identifier("repository")
+                                )
+                            .WithType(
+                                IdentifierName($"I{groupName.Feature.TrimStart("The")}Repository")
+                                )]
+                            )
+                        )
+                    )
+                    .AddBaseListTypes(items)
                     .AddMembers(method);
 
         }

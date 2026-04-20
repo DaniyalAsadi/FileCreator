@@ -10,9 +10,12 @@ public class MediatorRequestSpecificationGenerator
 {
     public static CompilationUnitSyntax Generate(string ns, string useCaseName, RequestType type, ResponseType responseType)
     {
+        StatementSyntax statements = type is RequestType.Query ? 
+            ParseStatement("Query.AsNoTracking();") : 
+            ParseStatement("Query");
         var ctor = ConstructorDeclaration($"{useCaseName}{type}Specification")
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
-                .WithBody(Block(ParseStatement("_ = Query;")));
+                .WithBody(Block(statements));
         if (responseType == ResponseType.PagedList)
         {
             ctor = ctor.AddParameterListParameters(

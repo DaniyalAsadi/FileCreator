@@ -13,36 +13,56 @@ public class MediatorRequestHandlerTestGenerator
 {
     public static CompilationUnitSyntax Generate(
         string ns,
+        GroupName groupName,
         string useCaseNameSpace,
         string useCaseName,
         RequestType type,
         bool hasResponse,
         ResponseType responseType)
     {
+
+
+        var mockField =
+            type == RequestType.Query ?
+            FieldDeclaration(VariableDeclaration(IdentifierName($"Mock<I{useCaseName}Service>"))
+                .AddVariables(VariableDeclarator("_serviceMock")))
+                .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ReadOnlyKeyword)) :
+                FieldDeclaration(VariableDeclaration(IdentifierName($"Mock<I{groupName.Feature.TrimStart("The")}Repository>"))
+                .AddVariables(VariableDeclarator("_repositoryMock")))
+                .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ReadOnlyKeyword));
+        var handlerField = FieldDeclaration(VariableDeclaration(IdentifierName($"{useCaseName}{type}Handler"))
+                .AddVariables(VariableDeclarator("_handler")))
+                .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ReadOnlyKeyword));
+
+
+
+        var newMockStatement = type == RequestType.Query
+            ? ParseStatement(
+                $"_serviceMock = new Mock<I{useCaseName}Service>();")
+            : ParseStatement(
+                $"_repositoryMock = new Mock<I{groupName.Feature.TrimStart("The")}Repository>();");
+        var newHandlerStatement = type == RequestType.Query
+            ? ParseStatement(
+                $"_handler = new(_serviceMock.Object);")
+            : ParseStatement(
+                $"_handler = new(_repositoryMock.Object);");
+
+        var ctor = ConstructorDeclaration($"{useCaseName}{type}HandlerTests")
+            .AddModifiers(Token(SyntaxKind.PublicKeyword))
+            .AddBodyStatements(newMockStatement, newHandlerStatement);
+
+
         var classDecl =
             ClassDeclaration($"{useCaseName}{type}HandlerTests")
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.SealedKeyword))
-            .AddMembers(GenerateHandlerField(useCaseName, type), GenerateTestMethod(useCaseName, type, hasResponse, responseType));
+            .AddMembers(mockField, handlerField, ctor, GenerateTestMethod(useCaseName, type, hasResponse, responseType));
 
         return RoslynHelpers.CompilationUnit(ns, classDecl, useCaseNameSpace);
     }
 
     // ---------------- Test Method ----------------
 
-    private static FieldDeclarationSyntax GenerateHandlerField(
-        string useCaseName,
-        RequestType type)
-    {
-        return FieldDeclaration(VariableDeclaration(IdentifierName($"{useCaseName}{type}Handler"))
-                .AddVariables(
-                    VariableDeclarator("_handler")
-                    .WithInitializer(
-                        EqualsValueClause(
-                            ImplicitObjectCreationExpression()
-                            .WithArgumentList(ArgumentList())))))
-            .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ReadOnlyKeyword));
 
-    }
 
     private static MethodDeclarationSyntax GenerateTestMethod(
         string useCaseName,
@@ -125,7 +145,14 @@ public class MediatorRequestHandlerTestGenerator
         bool hasResponse,
         ResponseType responseType)
     {
-        var responsePart = hasResponse ? responseType.ToString() : "NoResponse";
+        var responsePart = hasResponse ? responseType switch
+        {
+            ResponseType.Single => "Single",
+            ResponseType.IEnumerable => "List",
+            ResponseType.KeyValuePair => "KeyValuePair",
+            ResponseType.PagedList => "PagedList",
+            _ => throw new NotSupportedException()
+        } : "NoResponse";
 
         return $"{useCaseName}{type}Handle_Should_Return_Success_{responsePart}";
     }

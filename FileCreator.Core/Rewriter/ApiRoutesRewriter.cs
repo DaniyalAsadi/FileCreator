@@ -8,6 +8,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace FileCreator.Core.Rewriter;
 
 public sealed class ApiRoutesRewriter(
+    string projectName,
     string groupName,
     string usecaseName,
     HttpVerb httpVerb,
@@ -21,31 +22,37 @@ public sealed class ApiRoutesRewriter(
         if (node.Identifier.Text != "ApiRoutes")
             return base.VisitClassDeclaration(node);
 
-        var members = node.Members.ToList();
+        var projectMembers = node.Members.ToList();
 
-        var groupClass = members
+        var projectClass = projectMembers
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == projectName) ?? throw new NoMatchFoundException();
+
+        var groupMembers = projectClass.Members.ToList();
+
+        var groupClass = groupMembers
             .OfType<ClassDeclarationSyntax>()
             .FirstOrDefault(c => c.Identifier.Text == groupName);
 
         if (groupClass == null)
         {
             groupClass = CreateGroupClass();
-            members.Add(groupClass);
+            groupMembers.Add(groupClass);
         }
         else
         {
             groupClass = UpdateGroupClass(groupClass);
-            var index = members.FindIndex(m =>
+            var index = groupMembers.FindIndex(m =>
                 m is ClassDeclarationSyntax c &&
                 c.Identifier.Text == groupName);
 
-            members[index] = groupClass;
+            groupMembers[index] = groupClass;
         }
 
         // 🔴 این خط مهم است
-        members = NormalizeAllGroups(members);
+        groupMembers = NormalizeAllGroups(groupMembers);
 
-        return node.WithMembers(List(members));
+        return node.WithMembers(List(groupMembers));
     }
     // ------------------------------------------------------------
     // ساخت کلاس گروه جدید
@@ -92,7 +99,7 @@ public sealed class ApiRoutesRewriter(
         var ordered = members
             .Where(m => m != tagField)
             .OrderBy(GetSortKey)
-            .ThenBy(GetSortKey2,StringComparer.Ordinal)
+            .ThenBy(GetSortKey2, StringComparer.Ordinal)
             .ToList();
 
         members = [];
@@ -255,17 +262,19 @@ public static class ApiRoutesUpdater
 {
     public static void Update(
         string filePath,
+        string projectName,
         string groupName,
         string usecasename,
         HttpVerb verb,
         string route)
     {
+        return;
         var source = File.ReadAllText(filePath);
 
         var tree = CSharpSyntaxTree.ParseText(source);
         var root = tree.GetRoot();
 
-        var rewriter = new ApiRoutesRewriter(groupName, usecasename, verb, route);
+        var rewriter = new ApiRoutesRewriter(projectName, groupName, usecasename, verb, route);
         var newRoot = rewriter.Visit(root);
 
         var workspace = new AdhocWorkspace();

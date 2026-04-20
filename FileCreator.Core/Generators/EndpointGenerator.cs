@@ -11,6 +11,7 @@ public class EndpointGenerator
     public static CompilationUnitSyntax Generate(
     string ns,
     string useCaseNameSpace,
+    string projectName,
     string group,
     string useCaseName,
     RequestType type,
@@ -56,7 +57,7 @@ public class EndpointGenerator
                     Token(SyntaxKind.SealedKeyword))
                 .AddBaseListTypes(SimpleBaseType(ParseTypeName(baseType)))
                 .AddMembers(
-                    GenerateConfigureMethod(group, useCaseName, hasResponse, responseModelType),
+                    GenerateConfigureMethod(projectName, group, useCaseName, hasResponse, responseModelType),
                     GenerateHandleMethod(useCaseName, type, httpVerb, hasRequest));
 
         return RoslynHelpers.CompilationUnit(ns, classDecl,
@@ -65,6 +66,7 @@ public class EndpointGenerator
 
 
     private static MethodDeclarationSyntax GenerateConfigureMethod(
+        string projectName,
         string group,
         string useCaseName,
         bool hasResponse,
@@ -72,7 +74,7 @@ public class EndpointGenerator
     {
         var statements = new[]
         {
-        ParseStatement($"Specify(ApiRoutes.{group}.{useCaseName});"),
+        ParseStatement($"Specify(ApiRoutes.{projectName}.{group}.{useCaseName});"),
         CreateSummaryStatement(hasResponse,responseType)
         };
 

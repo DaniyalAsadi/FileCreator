@@ -67,7 +67,7 @@ public class EndpointRequestGenerator
             // parameter → ListRequest request
             method = method.AddParameterListParameters(
                 Parameter(Identifier("request"))
-                    .WithType(ParseTypeName("ListRequest")));
+                    .WithType(ParseTypeName($"{useCaseName}Request")));
 
             // new {UseCase}Filter() { }
             var filterObject =

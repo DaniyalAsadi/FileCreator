@@ -87,7 +87,7 @@ public sealed class RoslynFileCreator(
 
         files.Add(new GeneratedFile(
             Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Handler.cs"),
-            MediatorRequestHandlerGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+            MediatorRequestHandlerGenerator.Generate(usecaseNamespace,GroupName, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
         ));
 
         if (HasResponse)
@@ -130,7 +130,7 @@ public sealed class RoslynFileCreator(
         // ------------------------ Endpoint ------------------------
         files.Add(new GeneratedFile(
             Path.Combine(endpointPath, $"{UsecaseName}.cs"),
-            EndpointGenerator.Generate(webNamespace, usecaseNamespace, GroupName.Resource, UsecaseName, RequestType, HttpVerb, HasRequest, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+            EndpointGenerator.Generate(webNamespace, usecaseNamespace, ProjectName, GroupName.Resource, UsecaseName, RequestType, HttpVerb, HasRequest, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
         ));
 
         if (HasRequest)
@@ -149,12 +149,12 @@ public sealed class RoslynFileCreator(
         // ------------------------ Tests ------------------------
         files.Add(new GeneratedFile(
             Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
-            EndpointTestGenerator.Generate(functionalNamespace, usecaseNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
+            EndpointTestGenerator.Generate(functionalNamespace,ProjectName, usecaseNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
         ));
 
         files.Add(new GeneratedFile(
             Path.Combine(unitTestPath, $"{UsecaseName}{RequestType}HandlerTests.cs"),
-            MediatorRequestHandlerTestGenerator.Generate(unitTestNamespace, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+            MediatorRequestHandlerTestGenerator.Generate(unitTestNamespace,GroupName, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
         ));
 
         return files;

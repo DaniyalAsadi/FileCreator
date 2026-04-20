@@ -79,6 +79,7 @@ partial class FileCreatorForm
         menuSettings.Size = new Size(242, 22);
         menuSettings.Text = "Settings...";
         menuSettings.Click += BtnSettings_Click;
+
         // 
         // menuUpdateEnums
         // 
@@ -106,10 +107,9 @@ partial class FileCreatorForm
         cmbProjectName.BackColor = Color.FromArgb(45, 45, 48);
         cmbProjectName.DropDownStyle = ComboBoxStyle.DropDownList;
         cmbProjectName.ForeColor = Color.Gainsboro;
-        cmbProjectName.Items.AddRange(new object[] { "UserManagement", "FileStore" , "AuditLogging", "TicketManagement" });
+        cmbProjectName.Items.AddRange(new object[] { "UserManagement","IdentityServer", "FileStore", "AuditLogging", "TicketManagement" });
         cmbProjectName.Name = "cmbProjectName";
         cmbProjectName.Size = new Size(121, 23);
-        cmbProjectName.SelectedIndex = 0;
         cmbProjectName.SelectedIndexChanged += CmbProjectName_SelectedIndexChanged;
         // 
         // txtUseCaseGroup
@@ -206,9 +206,9 @@ partial class FileCreatorForm
         btnGenerate.Name = "btnGenerate";
         btnGenerate.Size = new Size(428, 32);
         btnGenerate.TabIndex = 9;
+        btnGenerate.Enabled = false;
         btnGenerate.Text = "Generate UseCase + Endpoint Files";
         btnGenerate.UseVisualStyleBackColor = false;
-        btnGenerate.Enabled = true;
         btnGenerate.EnabledChanged += btnGenerate_EnabledChanged;
         btnGenerate.Click += BtnGenerate_Click;
         // 
@@ -266,4 +266,3 @@ partial class FileCreatorForm
     }
 
 }
-    

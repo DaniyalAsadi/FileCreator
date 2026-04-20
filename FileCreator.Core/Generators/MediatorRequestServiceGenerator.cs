@@ -31,6 +31,7 @@ public class MediatorRequestServiceGenerator
             {
                 ResponseType.Single or ResponseType.IEnumerable =>
                 ParameterList([
+                    Parameter(Identifier("request")).WithType(ParseTypeName($"{useCaseName}{type}")),
                     Parameter(Identifier("cancellationToken")).WithType(ParseTypeName("CancellationToken"))
                     ]),
                 ResponseType.PagedList =>

@@ -5,10 +5,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
 using Newtonsoft.Json;
-using System.Reflection.Emit;
-using static System.Net.Mime.MediaTypeNames;
-namespace FileCreator;
 
+namespace FileCreator;
 public partial class FileCreatorForm : Form
 {
     private PreviewWorkspace? _workspace;
@@ -20,9 +18,10 @@ public partial class FileCreatorForm : Form
     private string _webBasePath = string.Empty;
     private string _functionalTestsBasePath = string.Empty;
     private string _unitTestsBasePath = string.Empty;
-    private string _sharedKerbalTestsBasePath = string.Empty;
+    private string _sharedKernelTestsBasePath = string.Empty;
     private string _infrastructureBasePath = string.Empty;
     private string _localizationBasePath = string.Empty;
+    private string _sharedKernelToolsTestsBasePath = string.Empty;
     public FileCreatorForm()
     {
         InitializeComponent();
@@ -78,8 +77,11 @@ public partial class FileCreatorForm : Form
         _unitTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(unitTestsBasePath ?? string.Empty) ?? string.Empty);
         var infrastructureBasePath = projects.GetValueOrDefault($"{projectName}.Infrastructure");
         _infrastructureBasePath = infrastructureBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(infrastructureBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
-        var sharedKerbalTestsBasePath = projects.GetValueOrDefault("SharedKernel");
-        _sharedKerbalTestsBasePath = sharedKerbalTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKerbalTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var sharedKernelTestsBasePath = projects.GetValueOrDefault("SharedKernel");
+        _sharedKernelTestsBasePath = sharedKernelTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKernelTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        var sharedKernelToolsTestsBasePath = projects.GetValueOrDefault("SharedKernel.Tools");
+        _sharedKernelToolsTestsBasePath = sharedKernelTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKernelToolsTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+
         var localizationBasePath = projects.GetValueOrDefault("Localization");
         _localizationBasePath = localizationBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(localizationBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
         btnGenerate.Enabled =
@@ -88,9 +90,10 @@ public partial class FileCreatorForm : Form
             !string.IsNullOrWhiteSpace(_webBasePath) &&
             !string.IsNullOrWhiteSpace(_functionalTestsBasePath) &&
             !string.IsNullOrWhiteSpace(_unitTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_sharedKerbalTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_sharedKernelTestsBasePath) &&
             !string.IsNullOrWhiteSpace(_infrastructureBasePath) &&
-            !string.IsNullOrWhiteSpace(_localizationBasePath);
+            !string.IsNullOrWhiteSpace(_localizationBasePath) &&
+            !string.IsNullOrEmpty(_sharedKernelToolsTestsBasePath);
 
     }
 
@@ -100,6 +103,8 @@ public partial class FileCreatorForm : Form
         frm.ShowDialog();
         LoadSettings(cmbProjectName.Text);
     }
+
+    
 
     // ----------------------------------------------------
     // GENERATION PIPELINE
@@ -198,9 +203,10 @@ public partial class FileCreatorForm : Form
             // 4️⃣ Write to Disk
             RoslynFileCreator.WriteFiles(previewFiles);
 
-            var apiRoutePath = FindApiRoutes(_sharedKerbalTestsBasePath);
+            var apiRoutePath = FindApiRoutes(_sharedKernelToolsTestsBasePath);
             ApiRoutesUpdater.Update(
                 apiRoutePath,
+                _projectName,
                 group.Resource,
                 useCaseName,
                 httpVerb,

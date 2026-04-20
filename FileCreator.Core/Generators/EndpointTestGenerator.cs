@@ -15,6 +15,7 @@ public class EndpointTestGenerator
 {
     public static CompilationUnitSyntax Generate(
         string ns,
+        string projectName,
         string useCaseNameSpace,
         string webNameSpace,
         GroupName groupName,
@@ -39,6 +40,7 @@ public class EndpointTestGenerator
             .WithParameterList(ctorParams)
             .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.SealedKeyword))
             .AddMembers(GenerateTestMethod(
+                projectName,
                 groupName,
                 useCaseName,
                 hasRequest,
@@ -53,6 +55,7 @@ public class EndpointTestGenerator
     // ---------- Test Method ----------
 
     private static MethodDeclarationSyntax GenerateTestMethod(
+        string projectName,
         GroupName groupName,
         string useCaseName,
         bool hasRequest,
@@ -70,8 +73,8 @@ public class EndpointTestGenerator
 
         var statements = new List<StatementSyntax>
         {
-            // var route = $"{ApiRoutes.Group.UseCase.RoutePattern}";
-            LocalDeclarationStatement(
+            // var route = $"{ApiRoutes.projectName.Group.UseCase.RoutePattern}";
+        LocalDeclarationStatement(
         VariableDeclaration(IdentifierName("var"))
         .AddVariables(
             VariableDeclarator("route")
@@ -86,7 +89,10 @@ public class EndpointTestGenerator
                                     SyntaxKind.SimpleMemberAccessExpression,
                                     MemberAccessExpression(
                                         SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName("ApiRoutes"),
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("ApiRoutes"),
+                                            IdentifierName(projectName)),
                                         IdentifierName(groupName.Resource.ToString())),
                                     IdentifierName(useCaseName)),
                                 IdentifierName("RoutePattern")
@@ -96,8 +102,7 @@ public class EndpointTestGenerator
                 )
             )
         )
-    )
-        };
+    )};
 
 
         // var request = new XxxRequest();
