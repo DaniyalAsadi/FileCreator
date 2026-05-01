@@ -15,7 +15,7 @@ public class MediatorRequestServiceGenerator
             ResponseType.Single => $"Task<{useCaseName}{type}Response?>",
             ResponseType.IEnumerable => $"Task<IEnumerable<{useCaseName}{type}Response>>",
             ResponseType.PagedList => $"Task<PagedList<{useCaseName}{type}Response>>",
-            ResponseType.KeyValuePair => $"Task<Result<IEnumerable<SelectItem>>>",
+            ResponseType.KeyValuePair => $"Task<IEnumerable<SelectItem>>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
         var identifierName = responseType switch
