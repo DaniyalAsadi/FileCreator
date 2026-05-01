@@ -219,7 +219,7 @@ partial class FileCreatorForm
         cmbResponseType.Enabled = false;
         cmbResponseType.FlatStyle = FlatStyle.Flat;
         cmbResponseType.ForeColor = Color.Gainsboro;
-        cmbResponseType.Items.AddRange(new object[] { "Single", "IEnumerable", "PagedList" });
+        cmbResponseType.Items.AddRange(new object[] { "Single", "IEnumerable", "KeyValuePair", "PagedList" });
         cmbResponseType.Location = new Point(280, 110);
         cmbResponseType.Name = "cmbResponseType";
         cmbResponseType.Size = new Size(160, 23);

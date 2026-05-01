@@ -33,7 +33,7 @@ public class MediatorRequestSpecificationGenerator
             ResponseType.Single => SimpleBaseType(ParseTypeName($"SingleResultSpecification<T,{useCaseName}{type}Response>")),
             ResponseType.IEnumerable => SimpleBaseType(ParseTypeName($"Specification<T,{useCaseName}{type}Response>")),
             ResponseType.PagedList => SimpleBaseType(ParseTypeName($"PagedListResultSpecification<T,{useCaseName}{type}Response>")),
-            ResponseType.KeyValuePair => SimpleBaseType(ParseTypeName($"KeyValuePairResultSpecification<T, Guid, string>")),
+            ResponseType.KeyValuePair => SimpleBaseType(ParseTypeName($"KeyValuePairResultSpecification<T, SelectItem>")),
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
 
