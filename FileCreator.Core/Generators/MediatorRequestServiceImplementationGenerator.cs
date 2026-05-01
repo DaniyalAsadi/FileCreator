@@ -23,7 +23,7 @@ public class MediatorRequestServiceImplementationGenerator
         {
             ResponseType.Single => $"Task<{useCaseName}{type}Response?>",
             ResponseType.IEnumerable => $"Task<IEnumerable<{useCaseName}{type}Response>>",
-            ResponseType.KeyValuePair => $"Task<IEnumerable<SelectItem>>>",
+            ResponseType.KeyValuePair => $"Task<IEnumerable<SelectItem>>",
             ResponseType.PagedList => $"Task<PagedList<{useCaseName}{type}Response>>",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
