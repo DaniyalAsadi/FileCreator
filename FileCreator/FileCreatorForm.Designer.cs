@@ -107,7 +107,7 @@ partial class FileCreatorForm
         cmbProjectName.BackColor = Color.FromArgb(45, 45, 48);
         cmbProjectName.DropDownStyle = ComboBoxStyle.DropDownList;
         cmbProjectName.ForeColor = Color.Gainsboro;
-        cmbProjectName.Items.AddRange(new object[] { "UserManagement","IdentityServer", "FileStore", "AuditLogging", "TicketManagement" });
+        cmbProjectName.Items.AddRange(new object[] { "AuthorizationManager", "UserManagement","IdentityServer", "FileStore", "AuditLogging", "TicketManagement" });
         cmbProjectName.Name = "cmbProjectName";
         cmbProjectName.Size = new Size(121, 23);
         cmbProjectName.SelectedIndexChanged += CmbProjectName_SelectedIndexChanged;
