@@ -83,20 +83,16 @@ public class EndpointTestGenerator
                     InterpolatedStringExpression(Token(SyntaxKind.InterpolatedStringStartToken))
                     .AddContents(
                         Interpolation(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
                                     MemberAccessExpression(
                                         SyntaxKind.SimpleMemberAccessExpression,
                                         MemberAccessExpression(
                                             SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName("ApiRoutes"),
+                                            IdentifierName("ApiRoutePaths"),
                                             IdentifierName(projectName)),
                                         IdentifierName(groupName.Resource.ToString())),
-                                    IdentifierName(useCaseName)),
-                                IdentifierName("RoutePattern")
-                            )
+                                    IdentifierName(useCaseName))
                         )
                     )
                 )
