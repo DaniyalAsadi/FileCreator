@@ -56,8 +56,8 @@ public class MediatorRequestServiceImplementationGenerator
         successStatement = responseType switch
         {
             ResponseType.Single => $"repository.SingleOrDefaultAsync(new {useCaseName}{type}Specification(),cancellationToken);",
-            ResponseType.IEnumerable => $"Array.Empty<{useCaseName}{type}Response>();",
-            ResponseType.KeyValuePair => $"Array.Empty<KeyValuePair<Guid,string>>();",
+            ResponseType.IEnumerable => $"repository.TolistAsync(new {useCaseName}{type}Specification(),cancellationToken);",
+            ResponseType.KeyValuePair => $"repository.GetSelectionItemAsync(new {useCaseName}{type}Specification(), cancellationToken)",
             ResponseType.PagedList => $"repository.ToPagedListAsync(new {useCaseName}{type}Specification(pagedRequest),cancellationToken);",
             _ => throw new ArgumentOutOfRangeException(nameof(responseType)),
         };
