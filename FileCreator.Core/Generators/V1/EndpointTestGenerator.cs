@@ -6,10 +6,9 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using Humanizer;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using FileCreator.Core;
 using FileCreator.Core.Helpers;
 
-namespace FileCreator.Core.Generators;
+namespace FileCreator.Core.Generators.V1;
 
 public class EndpointTestGenerator
 {

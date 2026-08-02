@@ -1,8 +1,11 @@
 ﻿using FileCreator.Core;
-using FileCreator.Core.Generators;
+using FileCreator.Core.Generators.V2;
+using FileCreator.Core.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.DependencyInjection;
+using FileCreator.Core.DependencyInjection;
 using System.Data;
 using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -41,7 +44,7 @@ public sealed class RoslynFileCreator(
     // ------------------------
     // Generate Preview (no File IO)
     // ------------------------
-    public IReadOnlyList<GeneratedFile> GeneratePreview()
+    public async Task<IReadOnlyList<GeneratedFile>> GeneratePreview()
     {
         var files = new List<GeneratedFile>();
 
@@ -79,83 +82,106 @@ public sealed class RoslynFileCreator(
         string unitTestNamespace = $"{ProjectName}.UnitTests.UseCases.{GroupName.Feature}";
         string infrastructureNamespace = $"{ProjectName}.Infrastructure.Data.Queries.{GroupName.Feature}";
 
-        // ------------------------ MediatorRequest ------------------------
-        files.Add(new GeneratedFile(
-            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}.cs"),
-            MediatorRequestGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
-        ));
+        var services = new ServiceCollection().AddScribanCodeGeneration().BuildServiceProvider();
+        var generator = services.GetRequiredService<EndpointGenerator>();
 
-        files.Add(new GeneratedFile(
-            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Handler.cs"),
-            MediatorRequestHandlerGenerator.Generate(usecaseNamespace,GroupName, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
-        ));
+        var model = EndpointTemplateModelFactory.Create(
+            projectName: ProjectName,
+            useCaseNamespace: usecaseNamespace,
+            webNamespace: webNamespace,
+            group: groupName.Resource,
+            useCaseName: groupName.Feature,
+            requestType: RequestType,
+            httpVerb: HttpVerb,
+            hasRequest: HasRequest,
+            hasResponse: HasResponse,
+            responseType: ResponseType);
 
-        if (HasResponse)
-        {
-            if (ResponseType == ResponseType.PagedList)
-            {
-                files.Add(new GeneratedFile(
-                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Filter.cs"),
-                    MediatorRequestFiltersGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
-                ));
-            }
-            if (ResponseType is not ResponseType.KeyValuePair)
-            {
 
-                files.Add(new GeneratedFile(
-                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
-                    MediatorRequestResponseGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
-                ));
-            }
-        }
 
-        if (RequestType == RequestType.Query)
-        {
-            files.Add(new GeneratedFile(
-                Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
-                MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
-            ));
 
-            files.Add(new GeneratedFile(
-                Path.Combine(useCasePath, $"I{UsecaseName}Service.cs"),
-                MediatorRequestServiceGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
-            ));
 
-            files.Add(new GeneratedFile(
-                Path.Combine(infrastructureService, $"{UsecaseName}Service.cs"),
-                MediatorRequestServiceImplementationGenerator.Generate(infrastructureNamespace, usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
-            ));
-        }
 
-        // ------------------------ Endpoint ------------------------
+
+
+        //// ------------------------ MediatorRequest ------------------------
+        //files.Add(new GeneratedFile(
+        //    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}.cs"),
+        //    MediatorRequestGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        //));
+
+        //files.Add(new GeneratedFile(
+        //    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Handler.cs"),
+        //    MediatorRequestHandlerGenerator.Generate(usecaseNamespace,GroupName, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        //));
+
+        //if (HasResponse)
+        //{
+        //    if (ResponseType == ResponseType.PagedList)
+        //    {
+        //        files.Add(new GeneratedFile(
+        //            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Filter.cs"),
+        //            MediatorRequestFiltersGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+        //        ));
+        //    }
+        //    if (ResponseType is not ResponseType.KeyValuePair)
+        //    {
+
+        //        files.Add(new GeneratedFile(
+        //            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
+        //            MediatorRequestResponseGenerator.Generate(usecaseNamespace, UsecaseName, RequestType).NormalizeWhitespace().ToFullString()
+        //        ));
+        //    }
+        //}
+
+        //if (RequestType == RequestType.Query)
+        //{
+        //    files.Add(new GeneratedFile(
+        //        Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
+        //        MediatorRequestSpecificationGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
+        //    ));
+
+        //    files.Add(new GeneratedFile(
+        //        Path.Combine(useCasePath, $"I{UsecaseName}Service.cs"),
+        //        MediatorRequestServiceGenerator.Generate(usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
+        //    ));
+
+        //    files.Add(new GeneratedFile(
+        //        Path.Combine(infrastructureService, $"{UsecaseName}Service.cs"),
+        //        MediatorRequestServiceImplementationGenerator.Generate(infrastructureNamespace, usecaseNamespace, UsecaseName, RequestType, ResponseType).NormalizeWhitespace().ToFullString()
+        //    ));
+        //}
+
+        //// ------------------------ Endpoint ------------------------
+        string endpointCs = await generator.GenerateAsync(model);
         files.Add(new GeneratedFile(
             Path.Combine(endpointPath, $"{UsecaseName}.cs"),
-            EndpointGenerator.Generate(webNamespace, usecaseNamespace, ProjectName, GroupName.Resource, UsecaseName, RequestType, HttpVerb, HasRequest, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+            endpointCs
         ));
 
-        if (HasRequest)
-        {
-            files.Add(new GeneratedFile(
-                Path.Combine(endpointPath, $"{UsecaseName}Request.cs"),
-                EndpointRequestGenerator.Generate(webNamespace, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
-            ));
+        //if (HasRequest)
+        //{
+        //    files.Add(new GeneratedFile(
+        //        Path.Combine(endpointPath, $"{UsecaseName}Request.cs"),
+        //        EndpointRequestGenerator.Generate(webNamespace, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        //    ));
 
-            files.Add(new GeneratedFile(
-                Path.Combine(endpointPath, $"{UsecaseName}Validator.cs"),
-                EndpointRequestValidatorGenerator.Generate(webNamespace, UsecaseName).NormalizeWhitespace().ToFullString()
-            ));
-        }
+        //    files.Add(new GeneratedFile(
+        //        Path.Combine(endpointPath, $"{UsecaseName}Validator.cs"),
+        //        EndpointRequestValidatorGenerator.Generate(webNamespace, UsecaseName).NormalizeWhitespace().ToFullString()
+        //    ));
+        //}
 
-        // ------------------------ Tests ------------------------
-        files.Add(new GeneratedFile(
-            Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
-            EndpointTestGenerator.Generate(functionalNamespace,ProjectName, usecaseNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
-        ));
+        //// ------------------------ Tests ------------------------
+        //files.Add(new GeneratedFile(
+        //    Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
+        //    EndpointTestGenerator.Generate(functionalNamespace,ProjectName, usecaseNamespace, webNamespace, GroupName, UsecaseName, HasRequest, RequestType, HasResponse, ResponseType, HttpVerb).NormalizeWhitespace().ToFullString()
+        //));
 
-        files.Add(new GeneratedFile(
-            Path.Combine(unitTestPath, $"{UsecaseName}{RequestType}HandlerTests.cs"),
-            MediatorRequestHandlerTestGenerator.Generate(unitTestNamespace,GroupName, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
-        ));
+        //files.Add(new GeneratedFile(
+        //    Path.Combine(unitTestPath, $"{UsecaseName}{RequestType}HandlerTests.cs"),
+        //    MediatorRequestHandlerTestGenerator.Generate(unitTestNamespace,GroupName, usecaseNamespace, UsecaseName, RequestType, HasResponse, ResponseType).NormalizeWhitespace().ToFullString()
+        //));
 
         return files;
     }

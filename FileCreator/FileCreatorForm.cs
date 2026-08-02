@@ -172,6 +172,11 @@ public partial class FileCreatorForm : Form
         {
             UseWaitCursor = true;
 
+
+
+
+
+
             // 1️⃣ Generate Roslyn Files (memory only)
             var generator = new RoslynFileCreator(
                 projectName: _projectName,
@@ -188,7 +193,7 @@ public partial class FileCreatorForm : Form
                 responseType: responseType,
                 httpVerb: httpVerb);
 
-            var previewFiles = generator.GeneratePreview();
+            var previewFiles =await generator.GeneratePreview();
 
             // 2️⃣ Inject into Roslyn Solution Snapshot
             _workspace.InjectGeneratedFiles(previewFiles);
