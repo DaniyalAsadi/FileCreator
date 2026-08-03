@@ -78,4 +78,9 @@ public sealed class EndpointRequestTemplateModel : IGeneratorModel
     public required string MappingParameterName { get; init; }
 
     public required string MappingParameterTypeName { get; init; }
+
+
+    public required string RequestParameterName { get; init; }
+
+    public required string MapExpression { get; init; }
 }

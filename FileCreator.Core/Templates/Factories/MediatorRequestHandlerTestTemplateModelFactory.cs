@@ -52,7 +52,8 @@ public static class MediatorRequestHandlerTestTemplateModelFactory
                 "System.Threading",
                 "System.Threading.Tasks",
                 "Xunit",
-                "Moq"
+                "Moq",
+                useCaseNamespace
             ],
 
 

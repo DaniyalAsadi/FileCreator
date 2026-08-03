@@ -102,7 +102,7 @@ public sealed class RoslynFileCreator(
             Path.Combine(useCasePath, $"{UsecaseName}{RequestType}.cs"),
             await fileCreator.GenerateAsync(MediatorRequestTemplateModelFactory.Create(
             ns:usecaseNamespace,
-            useCaseName: GroupName.Feature,
+            useCaseName: UsecaseName,
             requestType:RequestType,
             hasResponse:HasResponse,
             responseType:ResponseType))));
@@ -189,8 +189,8 @@ public sealed class RoslynFileCreator(
             projectName: ProjectName,
             useCaseNamespace: usecaseNamespace,
             webNamespace: webNamespace,
-            group: GroupName.Resource,
-            useCaseName: GroupName.Feature,
+            group: GroupName.Feature,
+            useCaseName: UsecaseName,
             requestType: RequestType,
             httpVerb: HttpVerb,
             hasRequest: HasRequest,

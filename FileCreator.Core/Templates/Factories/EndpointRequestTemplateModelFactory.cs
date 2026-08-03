@@ -49,7 +49,8 @@ public static class EndpointRequestTemplateModelFactory
 
             Usings =
             [
-                "SharedKernel"
+                "SharedKernel",
+                useCaseNameSpace,
             ],
 
             UseCaseName = useCaseName,
@@ -92,7 +93,22 @@ public static class EndpointRequestTemplateModelFactory
 
 
             MappingParameterTypeName =
-                $"{useCaseName}Request"
+                $"{useCaseName}Request",
+
+            RequestParameterName = "request",
+
+
+
+            MapExpression =
+    isPagedQuery
+        ? $$"""
+           new {{useCaseName}}{{requestType}}(
+               new {{useCaseName}}{{requestType}}Filter(),
+               new PagedRequest(
+                   request.PageIndex,
+                   request.PageSize))
+           """
+        : $"new {useCaseName}{requestType}()",
         };
     }
 }

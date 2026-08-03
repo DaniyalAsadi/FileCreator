@@ -42,7 +42,7 @@ public static class EndpointTemplateModelFactory
                 _ => throw new ArgumentOutOfRangeException(nameof(responseType))
             };
 
-        var usings = new List<string> { "SharedKernel" };
+        var usings = new List<string> { "SharedKernel", useCaseNamespace };
         if (extraUsings is not null)
             usings.AddRange(extraUsings);
 
