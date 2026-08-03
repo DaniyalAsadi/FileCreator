@@ -8,17 +8,29 @@ namespace FileCreator.Core.Generators;
 /// <see cref="TemplateName"/> (and optionally override <see cref="FormatOutput"/>
 /// for non-C# templates such as .proto files, where Roslyn formatting doesn't apply).
 /// </summary>
-public abstract class ScribanCodeGenerator<TModel>(IScribanTemplateRenderer renderer) : ICodeGenerator<TModel>
-    where TModel : notnull
+public abstract class ScribanCodeGenerator<TModel>(IScribanTemplateRenderer renderer) : ICodeGenerator
+    where TModel : notnull, IGeneratorModel
 {
+    public Type ModelType => typeof(TModel);
     protected abstract string TemplateName { get; }
 
     /// <summary>Override and return false for non-C# templates (e.g. .proto, .json).</summary>
     protected virtual bool FormatOutput => true;
 
-    public virtual async Task<string> GenerateAsync(TModel model, CancellationToken ct = default)
+    public virtual async Task<string> GenerateAsync(
+        TModel model,
+        CancellationToken ct = default)
     {
         var rendered = await renderer.RenderAsync(TemplateName, model, ct);
         return FormatOutput ? RoslynCodeFormatter.Format(rendered) : rendered;
+    }
+
+    async Task<string> ICodeGenerator.GenerateAsync(
+       object model,
+       CancellationToken ct)
+    {
+        return await GenerateAsync(
+            (TModel)model,
+            ct);
     }
 }

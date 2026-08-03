@@ -1,0 +1,36 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}(
+    {{ constructor_parameter_type_name }} factory)
+    : {{ base_type_name }}(factory)
+{
+    [Fact]
+    public async Task {{ test_method_name }}()
+    {
+        var route = "{{ route_expression }}";
+
+{{ if has_request }}
+        var request = new {{ request_type_name }}();
+
+{{ end }}
+
+{{ if assign_response_variable }}
+        var response = await Client.{{ client_method_name }}{{ if generic_arguments.size > 0 }}<{{ for arg in generic_arguments }}{{ arg }}{{ if !for.last }}, {{ end }}{{ end }}>{{ end }}(
+            route{{ if has_request }},
+            request{{ end }});
+
+{{ if validate_response }}
+        response.Should().NotBeNull();
+{{ end }}
+
+{{ else }}
+        await Client.{{ client_method_name }}(
+            route{{ if has_request }},
+            request{{ end }});
+{{ end }}
+    }
+}

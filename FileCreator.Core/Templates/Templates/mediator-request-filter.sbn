@@ -1,0 +1,9 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}
+{
+}

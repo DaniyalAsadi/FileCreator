@@ -8,7 +8,7 @@ using Humanizer;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using FileCreator.Core.Helpers;
 
-namespace FileCreator.Core.Generators.V1;
+namespace FileCreator.Core.Generators.V2;
 
 public class EndpointTestGenerator
 {

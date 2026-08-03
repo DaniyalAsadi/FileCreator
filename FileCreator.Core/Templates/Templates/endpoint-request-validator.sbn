@@ -1,0 +1,16 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}
+    : {{ base_type_name }}
+{
+    public {{ class_name }}()
+    {
+{{ for rule in rules }}
+        {{ rule }}
+{{ end }}
+    }
+}

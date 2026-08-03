@@ -1,8 +1,10 @@
 ﻿// FileCreator.Core/Generators/EndpointGenerator.cs
-using FileCreator.Core.Models;
+using FileCreator.Core.Generators;
+using FileCreator.Core.Templates.Factories;
+using FileCreator.Core.Templates.Models;
 using FileCreator.Core.Templating;
 
-namespace FileCreator.Core.Generators.V2;
+namespace FileCreator.Core.Templates.Generators;
 
 /// <summary>
 /// Renders a FastEndpoints "Endpoint" class from an <see cref="EndpointTemplateModel"/>.
@@ -13,5 +15,5 @@ namespace FileCreator.Core.Generators.V2;
 public sealed class EndpointGenerator(IScribanTemplateRenderer renderer)
     : ScribanCodeGenerator<EndpointTemplateModel>(renderer)
 {
-    protected override string TemplateName => "Endpoint.sbn";
+    protected override string TemplateName => "endpoint.sbn";
 }

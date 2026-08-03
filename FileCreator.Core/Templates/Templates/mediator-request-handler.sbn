@@ -1,0 +1,23 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}(
+    {{ dependency_type_name }} {{ dependency_name }})
+    : {{ base_type_name }}
+{
+    public {{ return_type_name }} Handle(
+        {{ request_type_name }} request,
+        CancellationToken cancellationToken)
+    {
+{{ if has_expression_body }}
+        return await {{ dependency_name }}.{{ service_method_name }}(
+            request,
+            cancellationToken);
+{{ else }}
+        {{ method_body }}
+{{ end }}
+    }
+}

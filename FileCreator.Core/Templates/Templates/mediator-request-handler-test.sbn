@@ -1,0 +1,37 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}
+{
+    private readonly {{ mock_field_type_name }} {{ mock_field_name }};
+
+    private readonly {{ handler_type_name }} {{ handler_field_name }};
+
+
+    public {{ class_name }}()
+    {
+        {{ mock_initialization }}
+
+        {{ handler_initialization }}
+    }
+
+
+    [Fact]
+    public async Task {{ test_method_name }}()
+    {
+        var request = new {{ request_type_name }}();
+
+
+        var result = await {{ handler_field_name }}.Handle(
+            request,
+            CancellationToken.None);
+
+
+        result.Should().NotBeNull();
+
+        result.IsSuccess.Should().BeTrue();
+    }
+}

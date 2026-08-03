@@ -1,0 +1,16 @@
+﻿{{ for u in usings }}
+using {{ u }};
+{{ end }}
+
+namespace {{ namespace }};
+
+public sealed class {{ class_name }}(
+    {{ dependency_type_name }} {{ dependency_name }})
+    : {{ interface_name }}
+{
+    public {{ return_type_name }} {{ method_name }}(
+{{ for parameter in parameters }}
+        {{ parameter.type_name }} {{ parameter.name }}{{ if !for.last }},{{ end }}
+{{ end }})
+        => {{ expression_body }};
+}

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using FileCreator.Core.Templates.Factories;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FileCreator.Core.Models;
+namespace FileCreator.Core.Templates.Models;
 
 /// Everything the "endpoint.sbn" template needs to render a FastEndpoints class.
 /// This is a plain data bag — every field is already fully resolved by
@@ -10,7 +11,7 @@ namespace FileCreator.Core.Models;
 /// anything that isn't a boolean flag or a pre-computed string; it never
 /// concatenates type names or derives naming conventions itself.
 /// </summary>
-public sealed class EndpointTemplateModel
+public sealed class EndpointTemplateModel : IGeneratorModel
 {
     // ---- identity / placement -------------------------------------------------
     public required string Namespace { get; init; }

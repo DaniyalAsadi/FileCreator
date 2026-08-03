@@ -1,7 +1,6 @@
-﻿// FileCreator.Core/Models/EndpointTemplateModelFactory.cs
-using FileCreator.Core;
+﻿using FileCreator.Core.Templates.Models;
 
-namespace FileCreator.Core.Models;
+namespace FileCreator.Core.Templates.Factories;
 
 /// <summary>
 /// Single source of truth for how raw scaffold inputs (use-case name, request/response
