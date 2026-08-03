@@ -191,24 +191,6 @@ public sealed class PreviewWorkspace : IDisposable
         return new Range(editor, start, end);
     }
 
-    // --------------------------------------------
-    // رنگ‌ها مطابق VS Dark Theme
-    // --------------------------------------------
-    private static Color MapColor(string type) =>
-        type switch
-        {
-            ClassificationTypeNames.Keyword => Color.FromArgb(86, 156, 214),
-            ClassificationTypeNames.ClassName => Color.FromArgb(78, 201, 176),
-            ClassificationTypeNames.StructName => Color.FromArgb(134, 198, 145),
-            ClassificationTypeNames.InterfaceName => Color.FromArgb(184, 215, 163),
-            ClassificationTypeNames.EnumName => Color.FromArgb(184, 215, 163),
-            ClassificationTypeNames.MethodName => Color.FromArgb(220, 220, 170),
-            ClassificationTypeNames.PropertyName => Color.FromArgb(220, 220, 170),
-            ClassificationTypeNames.StringLiteral => Color.FromArgb(214, 157, 133),
-            ClassificationTypeNames.NumericLiteral => Color.FromArgb(181, 206, 168),
-            ClassificationTypeNames.Comment => Color.FromArgb(87, 166, 74),
-            _ => Color.Gainsboro
-        };
 
     public void Dispose() => _workspace.Dispose();
 }
