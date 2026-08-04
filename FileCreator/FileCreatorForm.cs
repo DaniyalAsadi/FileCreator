@@ -1,15 +1,16 @@
 using FileCreator.Core;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
+using FileCreator.FileCreator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
 namespace FileCreator;
 public partial class FileCreatorForm : Form
 {
-    private PreviewWorkspace? _workspace;
 
     private string _slnPath = string.Empty;
     private string _projectName = string.Empty;
@@ -22,9 +23,23 @@ public partial class FileCreatorForm : Form
     private string _infrastructureBasePath = string.Empty;
     private string _localizationBasePath = string.Empty;
     private string _sharedKernelToolsTestsBasePath = string.Empty;
-    public FileCreatorForm()
+    private PreviewWorkspace _workspace = default!;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IWorkspaceCache _cache;
+    private readonly GenerationContext _context;
+
+
+    public FileCreatorForm(
+    IServiceProvider serviceProvider,
+    IWorkspaceCache cache,
+    GenerationContext context)
     {
+        _serviceProvider = serviceProvider;
+        _cache = cache;
+        _context = context;
+
         InitializeComponent();
+
         LoadSettings(cmbProjectName.Text);
         SetDefaultValue();
     }
@@ -43,11 +58,23 @@ public partial class FileCreatorForm : Form
         try
         {
             UseWaitCursor = true;
+            _workspace = _cache.GetWorkspace();
 
-            _workspace = WorkspaceCache.GetWorkspace(_slnPath);
-
-            // Warmup Roslyn (build graph, load metadata, etc.)
             await _workspace.WarmupAsync();
+        }
+        catch
+        {
+            using var settings = _serviceProvider.GetRequiredService<SettingsForm>();
+
+            if (settings.ShowDialog(this) == DialogResult.OK)
+            {
+                _workspace = _cache.GetWorkspace();
+                await _workspace.WarmupAsync();
+            }
+            else
+            {
+                Close();
+            }
         }
         finally
         {
@@ -65,6 +92,9 @@ public partial class FileCreatorForm : Form
         _slnPath = Properties.Settings.Default.SolutionPath;
         _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
         _projectName = projectName;
+        _context.ProjectName = _projectName;
+        _context.SolutionPath = _slnPath;
+        _context.SolutionName = _solutionName;
         string solutionFolder = Path.GetDirectoryName(_slnPath)!;
 
         var useCasePath = projects.GetValueOrDefault($"{projectName}.UseCases");
@@ -100,11 +130,28 @@ public partial class FileCreatorForm : Form
     private void BtnSettings_Click(object sender, EventArgs e)
     {
         using var frm = new SettingsForm();
-        frm.ShowDialog();
-        LoadSettings(cmbProjectName.Text);
+
+        if (frm.ShowDialog(this) == DialogResult.OK)
+        {
+            LoadSettings(cmbProjectName.Text);
+
+            _workspace = _cache.GetWorkspace();
+        }
+
     }
 
-    
+
+    private void BtnGrpcGeneration_Click(object sender, EventArgs e)
+    {
+        using var scope = _serviceProvider.CreateScope();
+
+        var frm = scope.ServiceProvider.GetRequiredService<GrpcGenerationForm>();
+
+        frm.ShowDialog(this);
+
+    }
+
+
 
     // ----------------------------------------------------
     // GENERATION PIPELINE

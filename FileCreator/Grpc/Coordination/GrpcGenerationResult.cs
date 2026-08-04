@@ -1,0 +1,50 @@
+﻿using FileCreator.Grpc.Discovery;
+using FileCreator.Grpc.Preview;
+using FileCreator.Grpc.ViewModels;
+using FileCreator.Grpc.Writers;
+using GrpcScaffold.Core.Analysis.Models;
+using GrpcScaffold.Core.IO;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Text;
+
+namespace FileCreator.Grpc.Coordination;
+
+public sealed record GrpcGenerationResult(
+    ImmutableArray<EndpointModel> Endpoints,
+    IReadOnlyList<GeneratedFile> Files,
+    GrpcGenerationOptions Options);
+
+public sealed class GrpcGenerationCoordinator(
+    IEndpointDiscoveryService discovery,
+    IGrpcPreviewGenerator previewGenerator,
+    IGrpcFileWriter writer)
+{
+    public async Task<GrpcGenerationResult> PrepareAsync(GrpcGenerationOptions options)
+    {
+        var validationErrors = options.Validate();
+        if (validationErrors.Count > 0)
+            throw new InvalidOperationException(string.Join(Environment.NewLine, validationErrors));
+
+        var endpoints = await discovery.DiscoverAsync(options);
+
+        if (endpoints.IsEmpty)
+            throw new InvalidOperationException("هیچ Endpoint منطبقی پیدا نشد.");
+
+        if (options.SelectedEndpoints.Count > 0)
+        {
+            endpoints = [.. endpoints
+                .Where(x =>
+                    options.SelectedEndpoints
+                    .Contains(x.EndpointClassName))];
+        }
+
+        var files = previewGenerator.Generate(endpoints, options);
+
+        return new GrpcGenerationResult(endpoints, files, options);
+    }
+
+    public IReadOnlyList<WriteResult> Commit(GrpcGenerationResult result) =>
+        writer.Write(result.Files, result.Options);
+}

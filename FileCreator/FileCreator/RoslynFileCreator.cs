@@ -2,16 +2,10 @@
 using FileCreator.Core.DependencyInjection;
 using FileCreator.Core.Generators;
 using FileCreator.Core.Templates.Factories;
-using FileCreator.Core.Templates.Generators;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data;
 using System.Text;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace FileCreator;
+namespace FileCreator.FileCreator;
 
 public sealed class RoslynFileCreator(
     string projectName,
@@ -85,16 +79,6 @@ public sealed class RoslynFileCreator(
 
         var services = new ServiceCollection().AddScribanCodeGeneration().BuildServiceProvider();
         var fileCreator = services.GetRequiredService<ScribanFileCreator>();
-
-
-
-
-
-
-
-
-
-
 
         //// ------------------------ MediatorRequest ------------------------
         #region Request

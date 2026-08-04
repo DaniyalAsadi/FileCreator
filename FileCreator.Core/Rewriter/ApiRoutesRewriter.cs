@@ -268,7 +268,7 @@ public static class ApiRoutesUpdater
         HttpVerb verb,
         string route)
     {
-        return;
+        
         var source = File.ReadAllText(filePath);
 
         var tree = CSharpSyntaxTree.ParseText(source);

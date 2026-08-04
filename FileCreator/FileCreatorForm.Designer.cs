@@ -10,6 +10,7 @@ partial class FileCreatorForm
     private ToolStripMenuItem menuExit;
     private ToolStripMenuItem menuUpdateResx;
     private ToolStripMenuItem menuUpdateEnums;
+    private ToolStripMenuItem menuGrpcGeneration;
     private ToolStripComboBox cmbProjectName;
 
     private TextBox txtUseCaseGroup;
@@ -41,6 +42,7 @@ partial class FileCreatorForm
         menuUpdateEnums = new ToolStripMenuItem();
         menuUpdateResx = new ToolStripMenuItem();
         menuExit = new ToolStripMenuItem();
+        menuGrpcGeneration = new ToolStripMenuItem();
         cmbProjectName = new ToolStripComboBox();
         txtUseCaseGroup = new TextBox();
         txtUseCaseName = new TextBox();
@@ -67,7 +69,7 @@ partial class FileCreatorForm
         // menuFile
         // 
         menuFile.BackColor = Color.FromArgb(45, 45, 48);
-        menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuSettings, menuUpdateEnums, menuUpdateResx, menuExit });
+        menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuSettings,menuGrpcGeneration, menuUpdateEnums, menuUpdateResx, menuExit });
         menuFile.ForeColor = Color.Gainsboro;
         menuFile.Name = "menuFile";
         menuFile.Size = new Size(37, 23);
@@ -101,6 +103,15 @@ partial class FileCreatorForm
         menuExit.Size = new Size(242, 22);
         menuExit.Text = "Exit";
         menuExit.Click += BtnExit_Click;
+        // 
+        // menuExit
+        // 
+        menuGrpcGeneration.Name = "menuGrpcGeneration";
+        menuGrpcGeneration.Size = new Size(242, 22);
+        menuGrpcGeneration.Text = "Grpc Generation";
+        menuGrpcGeneration.Click += BtnGrpcGeneration_Click;
+
+
         // 
         // cmbProjectName
         // 

@@ -27,6 +27,22 @@ public sealed class PreviewWorkspace : IDisposable
     // Map سریع مسیر → پروژه
     private readonly List<(string dir, ProjectId id)> _projectDirs = [];
 
+    public Solution CurrentSolution => _solution;
+
+    public IReadOnlyList<Project> ProjectsInBuildOrder =>
+        _buildOrder.Select(id => _projects[id]).ToList();
+
+    public Project? FindProjectByNameSuffix(string suffix) =>
+        ProjectsInBuildOrder.FirstOrDefault(p => p.Name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+
+    public async Task<Compilation?> GetCompilationAsync(ProjectId projectId)
+    {
+        if (!_isWarmedUp) await WarmupAsync();
+        return await _solution.GetProject(projectId)!.GetCompilationAsync();
+    }
+
+
+
     // Cache Style ها
     private static readonly Dictionary<string, TextStyle> _predefinedStyles = new()
     {

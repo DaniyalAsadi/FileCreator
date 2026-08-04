@@ -51,15 +51,13 @@ public partial class SettingsForm : Form
             Properties.Settings.Default.ProjectPathes = projectLines;
             Properties.Settings.Default.Save();
             var result = MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            if (result == DialogResult.OK)
-            {
-                Close();
-            }
+            DialogResult = DialogResult.OK;
+            Close();
         }
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            ClearSettings();
+
         }
         static Dictionary<string, string> ExtractProjects(string[] lines, string solutionFolder)
         {
