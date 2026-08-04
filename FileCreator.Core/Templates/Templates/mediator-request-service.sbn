@@ -1,13 +1,11 @@
 ﻿{{ for u in usings }}
-using {{ u }};
-{{ end }}
+using {{ u }};{{ end }}
 
 namespace {{ namespace }};
 
 public interface {{ interface_name }}
 {
     {{ return_type_name }} {{ method_name }}(
-{{ for parameter in parameters }}
-        {{ parameter.type_name }} {{ parameter.name }}{{ if !for.last }},{{ end }}
-{{ end }});
+        {{ for parameter in parameters }}{{ parameter.type_name }} {{ parameter.name }}{{ if !for.last }},
+        {{ end }}{{ end }});
 }

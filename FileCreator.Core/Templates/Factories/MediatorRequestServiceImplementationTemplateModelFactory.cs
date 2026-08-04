@@ -22,7 +22,8 @@ public static class MediatorRequestServiceImplementationTemplateModelFactory
             [
                 "System.Threading",
                 "System.Threading.Tasks",
-                "System.Collections.Generic"
+                "System.Collections.Generic",
+                useCaseNamespace,
             ],
 
 

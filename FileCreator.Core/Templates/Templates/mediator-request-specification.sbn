@@ -1,6 +1,5 @@
 ﻿{{ for u in usings }}
-using {{ u }};
-{{ end }}
+using {{ u }}; {{ end }}
 
 namespace {{ namespace }};
 
@@ -8,13 +7,8 @@ public sealed class {{ class_name }}
     : {{ base_type_name }}
 {
     public {{ class_name }}(
-{{ if has_paged_request_parameter }}
-        {{ constructor_parameter_type_name }} {{ constructor_parameter_name }}
-{{ end }}
-    )
-{{ if has_paged_request_parameter }}
-        : base({{ base_constructor_argument }})
-{{ end }}
+    {{ if has_paged_request_parameter }}{{ constructor_parameter_type_name }} {{ constructor_parameter_name }}
+    {{ end }}) {{ if has_paged_request_parameter }}: base({{ base_constructor_argument }}){{ end }}
     {
         {{ constructor_statement }}
     }

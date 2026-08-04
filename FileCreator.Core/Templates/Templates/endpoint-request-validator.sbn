@@ -1,6 +1,5 @@
 ﻿{{ for u in usings }}
-using {{ u }};
-{{ end }}
+using {{ u }};{{ end }}
 
 namespace {{ namespace }};
 

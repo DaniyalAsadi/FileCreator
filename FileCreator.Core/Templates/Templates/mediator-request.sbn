@@ -1,21 +1,13 @@
 ﻿{{ for u in usings }}
-using {{ u }};
-{{ end }}
+using {{ u }};{{ end }}
 
 namespace {{ namespace }};
 
-public sealed class {{ class_name }}
-    : {{ base_type_name }}
-{{ if is_paged_query }}
-    (
+public sealed class {{ class_name }}{{ if is_paged_query }}(
         {{ filter_type_name }} filter,
-        {{ paged_request_type_name }} pagedRequest)
-{{ end }}
+        {{ paged_request_type_name }} pagedRequest){{ end }}
+    : {{ base_type_name }}
 {
-{{ for property in properties }}
-
-    public {{ property.type_name }} {{ property.name }} { get; }
-        = {{ property.initializer_name }};
-
+{{ for property in properties }}public {{ property.type_name }} {{ property.name }} { get; } = {{ property.initializer_name }};
 {{ end }}
 }

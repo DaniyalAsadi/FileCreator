@@ -40,6 +40,7 @@ public sealed class PreviewWorkspace : IDisposable
         [ClassificationTypeNames.StringLiteral] = new TextStyle(new SolidBrush(Color.FromArgb(214, 157, 133)), null, FontStyle.Regular),
         [ClassificationTypeNames.NumericLiteral] = new TextStyle(new SolidBrush(Color.FromArgb(181, 206, 168)), null, FontStyle.Regular),
         [ClassificationTypeNames.Comment] = new TextStyle(new SolidBrush(Color.FromArgb(87, 166, 74)), null, FontStyle.Regular),
+        [ClassificationTypeNames.ControlKeyword] = new TextStyle(new SolidBrush(Color.FromArgb(216, 160, 223)),null,FontStyle.Regular),
         ["Default"] = new TextStyle(new SolidBrush(Color.Gainsboro), null, FontStyle.Regular)
     };
 

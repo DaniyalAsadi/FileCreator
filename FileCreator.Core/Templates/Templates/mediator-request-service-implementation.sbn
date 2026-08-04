@@ -1,6 +1,5 @@
 ﻿{{ for u in usings }}
-using {{ u }};
-{{ end }}
+using {{ u }};{{ end }}
 
 namespace {{ namespace }};
 
@@ -9,8 +8,7 @@ public sealed class {{ class_name }}(
     : {{ interface_name }}
 {
     public {{ return_type_name }} {{ method_name }}(
-{{ for parameter in parameters }}
-        {{ parameter.type_name }} {{ parameter.name }}{{ if !for.last }},{{ end }}
-{{ end }})
-        => {{ expression_body }};
+        {{ for parameter in parameters }}{{ parameter.type_name }} {{ parameter.name }}{{ if !for.last }},
+        {{ end }}{{ end }}) => 
+        {{ expression_body }};
 }
