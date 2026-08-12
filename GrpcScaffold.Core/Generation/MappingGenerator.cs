@@ -128,6 +128,10 @@ public sealed class MappingGenerator(TemplateEngine templates)
     // request.<GrpcField> -> new MediatorMessage(...)
     // ---------------------------------------------------------------------
 
+    // ---------------------------------------------------------------------
+    // request.<GrpcField> -> new MediatorMessage(...)
+    // ---------------------------------------------------------------------
+
     private static IReadOnlyList<Dictionary<string, object?>> BuildRequestMappings(EndpointModel endpoint)
     {
         var ctor = endpoint.MediatorMessage.PreferredConstructor;
@@ -135,28 +139,25 @@ public sealed class MappingGenerator(TemplateEngine templates)
             return [];
 
         var requestFields = endpoint.Request?.Fields ?? [];
-        var lookup = FlattenByClrType(endpoint.Request);
+
+        // Two distinct lookups — they answer two distinct questions:
+        //  - requestLookup: "if a Request *field* is itself a nested proto message, what CLR
+        //    contract does it correspond to?" (feeds BuildProtoToClrExpression, unchanged).
+        //  - mediatorLookup: "if a MediatorMessage constructor *parameter*'s CLR type is itself
+        //    a known, constructible contract (e.g. PermissionListQueryFilter, PagedRequest),
+        //    what is its constructor?"
+        // PermissionListQueryFilter/PagedRequest live in the MediatorMessage's own dependency
+        // graph — flattening only endpoint.Request would never surface them, which was the bug.
+        var requestLookup = FlattenByClrType(endpoint.Request);
+        var mediatorLookup = FlattenByClrType(endpoint.MediatorMessage);
+
+        var visiting = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return ctor.Parameters
             .Select(parameter =>
             {
-                var sourceName = parameter.SourceFieldName ?? parameter.Name;
-                var field = requestFields.FirstOrDefault(f =>
-                    string.Equals(f.Name, sourceName, StringComparison.OrdinalIgnoreCase));
-
-                string expression;
-                if (field is not null)
-                {
-                    var materializer = ProtoTypeConversion.CollectionMaterializer(parameter.TypeName);
-                    expression = BuildProtoToClrExpression(field.Reference, $"request.{field.Name}", lookup, materializer);
-                }
-                else
-                {
-                    // No request field maps onto this constructor parameter (e.g. a value the
-                    // handler is expected to populate itself). Emit something that compiles
-                    // and is impossible to miss during review.
-                    expression = $"default({parameter.TypeName}) /* TODO: no request field maps to '{parameter.Name}' */";
-                }
+                var (expression, needsReview) = BuildConstructorArgumentExpression(
+                    parameter, "request", requestFields, requestLookup, mediatorLookup, visiting);
 
                 return new Dictionary<string, object?>
                 {
@@ -164,12 +165,70 @@ public sealed class MappingGenerator(TemplateEngine templates)
                     ["expression"] = expression,
                     ["is_optional"] = parameter.IsOptional,
                     ["has_default"] = parameter.HasDefaultValue,
-                    ["needs_review"] = field is null
+                    ["needs_review"] = needsReview
                 };
             })
             .ToList();
     }
 
+    private static (string Expression, bool NeedsReview) BuildConstructorArgumentExpression(
+        ConstructorParameterInfo parameter,
+        string source,
+        IReadOnlyList<ProtoFieldInfo> requestFields,
+        IReadOnlyDictionary<ITypeSymbol, ContractInfo> requestLookup,
+        IReadOnlyDictionary<ITypeSymbol, ContractInfo> mediatorLookup,
+        ISet<ITypeSymbol> visiting)
+    {
+        var sourceName = parameter.SourceFieldName ?? parameter.Name;
+
+        // 1. Direct field mapping always wins over nested construction (requirement #5).
+        var field = requestFields.FirstOrDefault(f =>
+            string.Equals(f.Name, sourceName, StringComparison.OrdinalIgnoreCase));
+
+        if (field is not null)
+        {
+            var materializer = ProtoTypeConversion.CollectionMaterializer(parameter.TypeName);
+            var expr = BuildProtoToClrExpression(field.Reference, $"{source}.{field.Name}", requestLookup, materializer);
+            return (expr, false);
+        }
+
+        // 2. No direct field — is the parameter's own type a known, constructible contract
+        //    reachable from the MediatorMessage's dependency graph?
+        if (parameter.Type is not null &&
+            mediatorLookup.TryGetValue(parameter.Type, out var nestedContract) &&
+            nestedContract.PreferredConstructor is { Parameters.Count: > 0 } nestedCtor)
+        {
+            if (!visiting.Add(parameter.Type))
+            {
+                // Cyclic constructor dependency (A -> B -> A).
+                return (
+                    $"default({parameter.TypeName}) /* TODO: recursive constructor mapping for '{parameter.TypeName}' — map manually */",
+                    true);
+            }
+
+            try
+            {
+                var anyReview = false;
+                var args = nestedCtor.Parameters.Select(p =>
+                {
+                    var (argExpr, argReview) = BuildConstructorArgumentExpression(
+                        p, source, requestFields, requestLookup, mediatorLookup, visiting);
+                    anyReview |= argReview;
+                    return argExpr;
+                });
+
+                var expression = $"new {nestedContract.ClrType.ToDisplayString()}({string.Join(", ", args)})";
+                return (expression, anyReview);
+            }
+            finally
+            {
+                visiting.Remove(parameter.Type);
+            }
+        }
+
+        // 3. Nothing maps.
+        return ($"default({parameter.TypeName}) /* TODO: no request field maps to '{parameter.Name}' */", true);
+    }
     /// <summary>
     /// Converts a proto/gRPC field reference into a CLR expression, recursing through
     /// repeated collections and nested messages as needed.

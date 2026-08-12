@@ -1,4 +1,5 @@
 ﻿using FileCreator.Grpc.ViewModels;
+using FileCreator.Services;
 
 namespace FileCreator;
 
@@ -26,18 +27,24 @@ partial class GrpcGenerationForm
     private void ConfigureEndpointGrid()
     {
         dgvEndpoints.AutoGenerateColumns = false;
-
         dgvEndpoints.Columns.Clear();
 
+        var selectAllHeader = new DataGridViewCheckBoxHeaderCell();
 
-        dgvEndpoints.Columns.Add(
-            new DataGridViewCheckBoxColumn
-            {
-                DataPropertyName = nameof(EndpointSelectionItem.Selected),
-                HeaderText = "",
-                Width = 40
-            });
+        selectAllHeader.CheckedChanged += (_, _) =>
+        {
+            SelectAllEndpoints(selectAllHeader.Checked);
+        };
 
+        var selectionColumn = new DataGridViewCheckBoxColumn
+        {
+            DataPropertyName = nameof(EndpointSelectionItem.Selected),
+            HeaderText = "",
+            Width = 40,
+            HeaderCell = selectAllHeader
+        };
+
+        dgvEndpoints.Columns.Add(selectionColumn);
 
         dgvEndpoints.Columns.Add(
             new DataGridViewTextBoxColumn
@@ -47,7 +54,6 @@ partial class GrpcGenerationForm
                 Width = 200
             });
 
-
         dgvEndpoints.Columns.Add(
             new DataGridViewTextBoxColumn
             {
@@ -55,7 +61,6 @@ partial class GrpcGenerationForm
                 HeaderText = "Verb",
                 Width = 80
             });
-
 
         dgvEndpoints.Columns.Add(
             new DataGridViewTextBoxColumn
@@ -65,7 +70,6 @@ partial class GrpcGenerationForm
                 Width = 300
             });
 
-
         dgvEndpoints.Columns.Add(
             new DataGridViewTextBoxColumn
             {
@@ -74,7 +78,6 @@ partial class GrpcGenerationForm
                 Width = 150
             });
     }
-
     /// <summary>
     /// Clean up any resources being used.
     /// </summary>
@@ -188,7 +191,7 @@ partial class GrpcGenerationForm
         // 
         // btnGenerateGrpc
         // 
-        btnGenerateGrpc.Location = new Point(20, 260);
+        btnGenerateGrpc.Location = new Point(20, 565);
         btnGenerateGrpc.Name = "btnGenerateGrpc";
         btnGenerateGrpc.Size = new Size(420, 40);
         btnGenerateGrpc.TabIndex = 9;
@@ -200,7 +203,7 @@ partial class GrpcGenerationForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(470, 571);
+        ClientSize = new Size(470, 615);
         Controls.Add(txtNamespace);
         Controls.Add(txtOutputFolder);
         Controls.Add(txtEndpointFilter);
@@ -221,10 +224,18 @@ partial class GrpcGenerationForm
         ResumeLayout(false);
         PerformLayout();
 
-
-        ConfigureEndpointGrid();
-
     }
+    private void SelectAllEndpoints(bool selected)
+    {
+        if (dgvEndpoints.DataSource is not IEnumerable<EndpointSelectionItem> endpoints)
+            return;
 
+        foreach (var endpoint in endpoints)
+        {
+            endpoint.Selected = selected;
+        }
+
+        dgvEndpoints.Refresh();
+    }
     #endregion
 }

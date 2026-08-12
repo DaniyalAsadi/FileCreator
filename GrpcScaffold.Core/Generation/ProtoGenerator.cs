@@ -40,6 +40,8 @@ public sealed class ProtoGenerator(TemplateEngine templates)
 
             Scan(endpoint.Request, imports);
 
+            if (endpoint.Request is null)
+                imports.Add("google/protobuf/empty.proto");
             Scan(endpoint.Response, imports);
         }
 

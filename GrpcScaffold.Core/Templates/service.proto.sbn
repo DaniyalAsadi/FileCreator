@@ -29,7 +29,7 @@ enum {{ enum.name }} {
 {{~ for message in messages ~}}
 message {{ message.name }} {
 {{~ for field in message.fields ~}}
-{{ if field.is_nullable }} optional {{ end }}   {{ if field.is_repeated }}repeated {{ end }} {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
+{{ if field.is_nullable }} optional {{ end }} {{ if field.is_repeated }}repeated {{ end }} {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
 {{~ end ~}}
 }
 
