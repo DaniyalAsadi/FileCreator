@@ -38,6 +38,7 @@ public sealed class ProtoGenerator(TemplateEngine templates)
             if (endpoint.Request is null)
                 imports.Add("google/protobuf/empty.proto");
 
+            
             Scan(endpoint.Request, imports);
 
             if (endpoint.Request is null)
@@ -74,24 +75,37 @@ public sealed class ProtoGenerator(TemplateEngine templates)
         {
             imports.Add("google/protobuf/timestamp.proto");
         }
-
+        if (reference.IsStruct)
+        {
+            imports.Add("google/protobuf/struct.proto");
+        }
         foreach (var arg in reference.GenericArguments)
         {
             Scan(arg, imports);
         }
     }
 
+    private static List<Dictionary<string, object?>> ToTemplateFields(
+    IReadOnlyList<ProtoFieldInfo> fields) =>
+    [.. fields.Select(f => new Dictionary<string, object?>
+    {
+        ["name"] = f.Name,
+        ["proto_name"] = f.ProtoName,
+        ["proto_type_name"] = f.Reference.ProtoTypeName,
+        ["field_number"] = f.FieldNumber,
 
-    private static List<Dictionary<string, object?>> ToTemplateFields(IReadOnlyList<ProtoFieldInfo> fields) =>
-        fields.Select(f => new Dictionary<string, object?>
-        {
-            ["name"] = f.Name,
-            ["proto_name"] = f.ProtoName,
-            ["proto_type_name"] = f.Reference.ProtoTypeName,
-            ["field_number"] = f.FieldNumber,
-            ["is_repeated"] = f.Reference.IsRepeated,
-            ["is_nullable"] = f.IsNullable
-        }).ToList();
+        ["is_repeated"] = f.Reference.IsRepeated,
+        ["is_nullable"] = f.IsNullable,
+
+        ["is_map"] = f.Reference.IsMap,
+        ["is_struct"] = f.Reference.IsStruct,
+
+        ["map_key_type"] = f.Reference.MapKeyType
+            ?.ToDisplayString(),
+
+        ["map_value_type"] = f.Reference.MapValueType
+            ?.ToDisplayString()
+    })];
     private static Dictionary<string, object?> ToRpc(
     EndpointModel endpoint)
     {
@@ -114,7 +128,7 @@ public sealed class ProtoGenerator(TemplateEngine templates)
             AddMessage(endpoint.Response, messages);
         }
 
-        return messages.Values.ToList();
+        return [.. messages.Values];
     }
     private static void AddMessage(
     ContractInfo? contract,

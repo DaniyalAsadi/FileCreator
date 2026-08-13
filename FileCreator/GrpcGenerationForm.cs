@@ -23,7 +23,7 @@ public partial class GrpcGenerationForm : Form
 
     private readonly GenerationContext _context;
 
-    private List<EndpointSelectionItem> _endpoints = [];
+    private List<EndpointSelectionItem> _allEndpoints = [];
 
 
     public GrpcGenerationForm(
@@ -48,6 +48,13 @@ public partial class GrpcGenerationForm : Form
 
         await LoadEndpointsAsync();
     }
+    private void SetEndpoints(
+    IReadOnlyList<EndpointSelectionItem> endpoints)
+    {
+        _allEndpoints = endpoints.ToList();
+
+        ApplyEndpointFilter();
+    }
 
 
     private async Task LoadEndpointsAsync()
@@ -65,27 +72,9 @@ public partial class GrpcGenerationForm : Form
 
 
 
-            _endpoints = endpoints
-                .Select(x => new EndpointSelectionItem
-                {
-                    Selected = true,
+            SetEndpoints([.. endpoints
+                .Select(EndpointSelectionItem.Map)]);
 
-                    Name = x.EndpointClassName,
-
-                    Route = x.Route.Route,
-
-                    HttpVerb = Enum.Parse<HttpVerb>(x.Route.HttpVerb),
-
-                    RequestType = x.Request?.Name ?? "",
-
-                    ResponseType = x.Response?.Name ?? ""
-
-                })
-                .ToList();
-
-
-
-            dgvEndpoints.DataSource = _endpoints;
         }
         catch (Exception ex)
         {
@@ -222,10 +211,9 @@ public partial class GrpcGenerationForm : Form
 
 
             SelectedEndpoints =
-                _endpoints
+                [.. _allEndpoints
                     .Where(x => x.Selected)
-                    .Select(x => x.Name)
-                    .ToList()
+                    .Select(x => x.Name)]
         };
     }
 
@@ -250,5 +238,25 @@ public partial class GrpcGenerationForm : Form
             "نتیجه تولید فایل‌های gRPC",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
+    }
+    private void TxtEndpointFilter_TextChanged(
+    object? sender,
+    EventArgs e)
+    {
+        ApplyEndpointFilter();
+    }
+    private void ApplyEndpointFilter()
+    {
+        var filter = txtEndpointFilter.Text.Trim();
+
+        var filtered = string.IsNullOrWhiteSpace(filter)
+            ? _allEndpoints
+            : _allEndpoints
+                .Where(x =>
+                    EndpointFilter.GlobMatch(filter,x.Name))
+                .ToList();
+
+        dgvEndpoints.DataSource = null;
+        dgvEndpoints.DataSource = filtered;
     }
 }

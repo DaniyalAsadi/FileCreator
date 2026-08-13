@@ -47,8 +47,8 @@ public static class ProtoTypeMapper
         }
 
         return [.. properties
-            .DistinctBy(x => x.Name)
-            .OrderBy(x => x.Name)];
+                .DistinctBy(x => x.Name)
+                .OrderBy(x => x.Name)];
     }
 
     private static ProtoTypeReference Map(ITypeSymbol type)
@@ -65,7 +65,38 @@ public static class ProtoTypeMapper
                 IsNullable = true
             };
         }
+        // Dictionary
+        if (type is INamedTypeSymbol dictionary &&
+            dictionary.IsGenericType &&
+            dictionary.OriginalDefinition is INamedTypeSymbol definition &&
+            definition.ContainingNamespace.ToDisplayString() == "System.Collections.Generic" &&
+            definition.Name is "Dictionary" or "IDictionary" or "IReadOnlyDictionary")
+        {
+            var keyType = dictionary.TypeArguments[0];
+            var valueType = dictionary.TypeArguments[1];
 
+            // Dictionary<string, object> -> google.protobuf.Struct
+            if (keyType.SpecialType == SpecialType.System_String &&
+                valueType.SpecialType == SpecialType.System_Object)
+            {
+                return new ProtoTypeReference
+                {
+                    ClrType = type,
+                    ProtoTypeName = "google.protobuf.Struct",
+                    IsWellKnownType = true,
+                    IsStruct = true
+                };
+            }
+
+            return new ProtoTypeReference
+            {
+                ClrType = type,
+                ProtoTypeName = "map",
+                IsMap = true,
+                MapKeyType = keyType,
+                MapValueType = valueType
+            };
+        }
         // Array
         if (type is IArrayTypeSymbol array)
         {
@@ -105,6 +136,8 @@ public static class ProtoTypeMapper
                 IsEnum = true
             };
         }
+
+        
 
         switch (type.SpecialType)
         {

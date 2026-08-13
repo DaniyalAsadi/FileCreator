@@ -27,12 +27,10 @@ public sealed class EndpointFilter
         return query.ToImmutableArray();
     }
 
-    private static bool Matches(string pattern, EndpointModel endpoint) =>
-        GlobMatch(pattern, endpoint.EndpointClassName)
-        || GlobMatch(pattern, endpoint.ServiceName)
-        || GlobMatch(pattern, endpoint.Route.Route);
+    public static bool Matches(string pattern, EndpointModel endpoint) =>
+        GlobMatch(pattern, endpoint.EndpointClassName);
 
-    private static bool GlobMatch(string pattern, string? value)
+    public static bool GlobMatch(string pattern, string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return false;
 

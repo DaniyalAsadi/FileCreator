@@ -1,4 +1,5 @@
-﻿// src/GrpcScaffold.Core/Generation/MappingGenerator.cs
+﻿
+// src/GrpcScaffold.Core/Generation/MappingGenerator.cs
 using GrpcScaffold.Core.Analysis.Models;
 using Microsoft.CodeAnalysis;
 
@@ -84,7 +85,6 @@ public sealed class MappingGenerator(TemplateEngine templates)
         ["is_repeated"] = field.Reference.IsRepeated,
         ["is_nullable"] = field.Reference.IsNullable,
         ["is_well_known"] = field.Reference.IsWellKnownType,
-
         ["needs_cast"] = ProtoTypeConversion.NeedsCast(field.Reference)
     };
 
@@ -124,10 +124,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
         return list.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
     }
 
-    // ---------------------------------------------------------------------
-    // request.<GrpcField> -> new MediatorMessage(...)
-    // ---------------------------------------------------------------------
-
+    
     // ---------------------------------------------------------------------
     // request.<GrpcField> -> new MediatorMessage(...)
     // ---------------------------------------------------------------------
@@ -305,7 +302,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
 
         var lookup = FlattenByClrType(endpoint.Response);
 
-        return endpoint.Response.Fields
+        return [.. endpoint.Response.Fields
             .Select(field =>
             {
                 var expression = BuildClrToProtoExpression(field.Reference, $"result.{field.Name}", lookup);
@@ -316,8 +313,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
                     ["is_repeated"] = field.Reference.IsRepeated,
                     ["needs_review"] = expression.Contains("/* TODO", StringComparison.Ordinal)
                 };
-            })
-            .ToList();
+            })];
     }
 
     /// <summary>

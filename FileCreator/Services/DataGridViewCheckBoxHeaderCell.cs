@@ -6,7 +6,7 @@ namespace FileCreator.Services;
 
 public sealed class DataGridViewCheckBoxHeaderCell : DataGridViewColumnHeaderCell
 {
-    public bool Checked { get; private set; }
+    public bool Checked { get; private set; } 
 
     public event EventHandler? CheckedChanged;
 

@@ -134,6 +134,7 @@ partial class GrpcGenerationForm
         txtEndpointFilter.Name = "txtEndpointFilter";
         txtEndpointFilter.PlaceholderText = "Endpoint Filter (*User*)";
         txtEndpointFilter.Size = new Size(420, 23);
+        txtEndpointFilter.TextChanged += TxtEndpointFilter_TextChanged;
         txtEndpointFilter.TabIndex = 2;
         // 
         // chkGenerateAll

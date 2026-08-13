@@ -1,11 +1,12 @@
 ﻿using FileCreator.Core;
+using GrpcScaffold.Core.Analysis.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace FileCreator.Grpc.ViewModels;
 
-public sealed class EndpointSelectionItem
+public sealed record EndpointSelectionItem
 {
     public bool Selected { get; set; }
 
@@ -18,4 +19,18 @@ public sealed class EndpointSelectionItem
     public string RequestType { get; init; } = default!;
 
     public string ResponseType { get; init; } = default!;
+
+
+    public static EndpointSelectionItem Map(EndpointModel endpoint)
+    {
+        return new EndpointSelectionItem()
+        {
+            Selected = false,
+            Name = endpoint.EndpointClassName,
+            Route = endpoint.Route.Route,
+            HttpVerb = Enum.Parse<HttpVerb>(endpoint.Route.HttpVerb),
+            RequestType = endpoint.Request?.Name ?? "",
+            ResponseType = endpoint.Response?.Name ?? ""
+        };
+    }
 }

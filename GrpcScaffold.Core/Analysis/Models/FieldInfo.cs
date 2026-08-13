@@ -30,8 +30,15 @@ public sealed record ProtoTypeReference
     public bool IsNullable { get; init; }
 
     public bool IsWellKnownType { get; init; }
+    public bool IsStruct { get; init; }
 
     public ProtoTypeReference? ElementType { get; init; }
+
+     public bool IsMap { get; init; }
+
+    public ITypeSymbol? MapKeyType { get; init; }
+    public ITypeSymbol? MapValueType { get; init; }
+
 
     public IReadOnlyList<ProtoTypeReference> GenericArguments { get; init; }
         = [];
