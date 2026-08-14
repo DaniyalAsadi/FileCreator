@@ -28,17 +28,13 @@ enum {{ enum.name }} {
 
 {{~ for message in messages ~}}
 message {{ message.name }} {
+
 {{~ for field in message.fields ~}}
-{{ if field.is_map }}
-  map<{{ field.map_key_type }}, {{ field.map_value_type }}> {{ field.proto_name }} = {{ field.field_number }};
-{{ else if field.is_repeated }}
-  repeated {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
-{{ else if field.is_nullable }}
-  optional {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
-{{ else }}
-  {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
-{{ end }}
-{{~ end ~}}
+{{ if field.is_map }} map<{{ field.map_key_type }}, {{ field.map_value_type }}> {{ field.proto_name }} = {{ field.field_number }};
+{{ else if field.is_repeated }} repeated {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
+{{ else if field.is_nullable }} optional {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
+{{ else }} {{ field.proto_type_name }} {{ field.proto_name }} = {{ field.field_number }};
+{{~ end ~}}{{ end }}
 }
 {{~ end ~}}
 

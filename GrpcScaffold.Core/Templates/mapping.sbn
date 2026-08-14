@@ -5,7 +5,8 @@
 // </auto-generated>
 
 {{~ for ns in usings ~}}
-using {{ ns }};{{~ end }}
+using {{ ns }};
+{{~ end }}
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using GrpcRequest = {{ grpc_request_type }};
@@ -29,16 +30,16 @@ public static class {{ mapping_class_name }}
 {{~ end ~}}
 {{~ end ~}}
 {{~ if mediator_message.preferred_constructor ~}}
-        return new {{ mediator_message.name }}(
-{{~ for field in query_mapping ~}}
-            {{ field.expression }}{{ if !for.last }},{{ end }}
-{{~ end ~}});
+    return new {{ mediator_message.name }}(
+        {{~ for field in query_mapping ~}}
+            {{ field.expression }}{{ if !for.last }},
+        {{~ end ~}}{{ end }});
 {{~ else ~}}
         return new {{ mediator_message.name }}
         {
-{{~ for field in query_mapping ~}}
+            {{~ for field in query_mapping ~}}
             {{ field.destination }} = {{ field.expression }},
-{{~ end ~}}
+            {{~ end ~}}
         };
 {{~ end ~}}
         // </ai-generated:MapToQuery>

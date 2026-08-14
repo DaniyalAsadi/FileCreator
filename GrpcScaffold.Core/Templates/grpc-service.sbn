@@ -18,18 +18,25 @@ public sealed class {{ service_name }}GrpcService(IMediator mediator)
 {
 {{~ for rpc in rpcs }}
 
-public override async Task<{{ grpc_namespace }}.{{ service_name }}.{{ rpc.response?.Name ?? "google.protobuf.Empty" }}> {{ rpc.rpc_name }}(
-    {{ rpc.request ? rpc.request_type : "Empty" }} request,
-    ServerCallContext context)
-{
-    var message = {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToQuery(request);
+    public override async Task<{{ if rpc.response }}{{ grpc_namespace }}.{{ service_name }}.{{ rpc.response.Name }}{{ else }}Empty{{ end }}> {{ rpc.rpc_name }}(
+        {{ if rpc.request }}{{ rpc.request_type }}{{ else }}Empty{{ end }} request,
+        ServerCallContext context)
+    {
+        var message =
+            {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToQuery(request);
 
-    var result = await mediator.Send(message, context.CancellationToken);
+        var result =
+            await mediator.Send(message, context.CancellationToken);
+
+        if (!result.IsSuccess)
+            throw result.ToRpcException();
+
 {{ if rpc.response }}
-    return {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToResponse(result);
+        return {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToResponse(result);
 {{ else }}
-    return new Empty();
+        return new Empty();
 {{ end }}
-}
+    }
+
 {{~ end }}
 }
