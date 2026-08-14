@@ -12,7 +12,7 @@ using Google.Protobuf.WellKnownTypes;
 using GrpcRequest = {{ grpc_request_type }};
 using GrpcResponse = {{ grpc_response_type }};
 
-namespace {{ grpc_namespace }}.{{ service_name }}.Mappings;
+namespace {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }};
 
 /// <summary>
 /// Maps between <see cref="GrpcRequest"/> / <see cref="GrpcResponse"/> and

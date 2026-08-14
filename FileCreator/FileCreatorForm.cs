@@ -2,6 +2,7 @@ using FileCreator.Core;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
 using FileCreator.FileCreator;
+using FileCreator.Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
@@ -9,34 +10,31 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
 namespace FileCreator;
+
 public partial class FileCreatorForm : Form
 {
 
     private string _slnPath = string.Empty;
     private string _projectName = string.Empty;
     private string _solutionName = string.Empty;
-    private string _useCasesBasePath = string.Empty;
-    private string _webBasePath = string.Empty;
-    private string _functionalTestsBasePath = string.Empty;
-    private string _unitTestsBasePath = string.Empty;
-    private string _sharedKernelTestsBasePath = string.Empty;
-    private string _infrastructureBasePath = string.Empty;
-    private string _localizationBasePath = string.Empty;
-    private string _sharedKernelToolsTestsBasePath = string.Empty;
     private PreviewWorkspace _workspace = default!;
     private readonly IServiceProvider _serviceProvider;
     private readonly IWorkspaceCache _cache;
+    private readonly IProjectPathsProvider _pathsProvider; // جدید
     private readonly GenerationContext _context;
 
 
     public FileCreatorForm(
     IServiceProvider serviceProvider,
+    IProjectPathsProvider pathsProvider,
     IWorkspaceCache cache,
+
     GenerationContext context)
     {
         _serviceProvider = serviceProvider;
         _cache = cache;
         _context = context;
+        _pathsProvider = pathsProvider;
 
         InitializeComponent();
 
@@ -88,42 +86,27 @@ public partial class FileCreatorForm : Form
     // ----------------------------------------------------
     private void LoadSettings(string projectName)
     {
-        Dictionary<string, string> projects = JsonConvert.DeserializeObject<Dictionary<string, string>>(Properties.Settings.Default.ProjectPathes) ?? [];
         _slnPath = Properties.Settings.Default.SolutionPath;
         _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
         _projectName = projectName;
         _context.ProjectName = _projectName;
         _context.SolutionPath = _slnPath;
         _context.SolutionName = _solutionName;
-        string solutionFolder = Path.GetDirectoryName(_slnPath)!;
 
-        var useCasePath = projects.GetValueOrDefault($"{projectName}.UseCases");
-        _useCasesBasePath = useCasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(useCasePath) ?? string.Empty) : string.Empty;
-        var webPath = projects.GetValueOrDefault($"{projectName}.Web");
-        _webBasePath = webPath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(webPath ?? string.Empty) ?? string.Empty) : string.Empty;
-        var functionalTestsBasePath = projects.GetValueOrDefault($"{projectName}.FunctionalTests");
-        _functionalTestsBasePath = functionalTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(functionalTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
-        var unitTestsBasePath = projects.GetValueOrDefault($"{projectName}.UnitTests");
-        _unitTestsBasePath = Path.Combine(solutionFolder, Path.GetDirectoryName(unitTestsBasePath ?? string.Empty) ?? string.Empty);
-        var infrastructureBasePath = projects.GetValueOrDefault($"{projectName}.Infrastructure");
-        _infrastructureBasePath = infrastructureBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(infrastructureBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
-        var sharedKernelTestsBasePath = projects.GetValueOrDefault("SharedKernel");
-        _sharedKernelTestsBasePath = sharedKernelTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKernelTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
-        var sharedKernelToolsTestsBasePath = projects.GetValueOrDefault("SharedKernel.Tools");
-        _sharedKernelToolsTestsBasePath = sharedKernelTestsBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(sharedKernelToolsTestsBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
+        // همه‌ی مسیرها یک‌جا resolve می‌شن و در GenerationContext می‌شینن
+        _context.Paths = _pathsProvider.Load(projectName, _slnPath);
 
-        var localizationBasePath = projects.GetValueOrDefault("Localization");
-        _localizationBasePath = localizationBasePath is not null ? Path.Combine(solutionFolder, Path.GetDirectoryName(localizationBasePath ?? string.Empty) ?? string.Empty) : string.Empty;
         btnGenerate.Enabled =
-            !string.IsNullOrWhiteSpace(_slnPath) &&
-            !string.IsNullOrWhiteSpace(_useCasesBasePath) &&
-            !string.IsNullOrWhiteSpace(_webBasePath) &&
-            !string.IsNullOrWhiteSpace(_functionalTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_unitTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_sharedKernelTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_infrastructureBasePath) &&
-            !string.IsNullOrWhiteSpace(_localizationBasePath) &&
-            !string.IsNullOrEmpty(_sharedKernelToolsTestsBasePath);
+            !string.IsNullOrWhiteSpace(_context.SolutionPath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.UseCasesBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.WebBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.FunctionalTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.UnitTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.SharedKernelTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.InfrastructureBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.LocalizationBasePath) &&
+            !string.IsNullOrEmpty(_context.Paths.SharedKernelToolsTestsBasePath);
+
 
     }
 
@@ -229,18 +212,18 @@ public partial class FileCreatorForm : Form
                 projectName: _projectName,
                 groupName: group,
                 usecaseName: useCaseName,
-                useCasePath: _useCasesBasePath,
-                webPath: _webBasePath,
-                functionalTestPath: _functionalTestsBasePath,
-                unitTestPath: _unitTestsBasePath,
-                infrastructurePath: _infrastructureBasePath,
+                useCasePath: _context.Paths.UseCasesBasePath,
+                webPath: _context.Paths.WebBasePath,
+                functionalTestPath: _context.Paths.FunctionalTestsBasePath,
+                unitTestPath: _context.Paths.UnitTestsBasePath,
+                infrastructurePath: _context.Paths.InfrastructureBasePath,
                 hasRequest: hasRequest,
                 requestType: type,
                 hasResponse: hasResponse,
                 responseType: responseType,
                 httpVerb: httpVerb);
 
-            var previewFiles =await generator.GeneratePreview();
+            var previewFiles = await generator.GeneratePreview();
 
             // 2️⃣ Inject into Roslyn Solution Snapshot
             _workspace.InjectGeneratedFiles(previewFiles);
@@ -255,7 +238,7 @@ public partial class FileCreatorForm : Form
             // 4️⃣ Write to Disk
             RoslynFileCreator.WriteFiles(previewFiles);
 
-            var apiRoutePath = FindApiRoutes(_sharedKernelToolsTestsBasePath);
+            var apiRoutePath = FindApiRoutes(_context.Paths.SharedKernelToolsTestsBasePath);
             ApiRoutesUpdater.Update(
                 apiRoutePath,
                 _projectName,
@@ -428,9 +411,9 @@ public partial class FileCreatorForm : Form
     {
         try
         {
-            var resxPathes = Directory.GetFiles(Path.Combine(_localizationBasePath,
+            var resxPathes = Directory.GetFiles(Path.Combine(_context.Paths.LocalizationBasePath,
                 "Resources"), "*.resx");
-            var resxDesignPath = Directory.GetFiles(Path.Combine(_localizationBasePath,
+            var resxDesignPath = Directory.GetFiles(Path.Combine(_context.Paths.LocalizationBasePath,
                 "Resources"), "*.cs").First();
 
             if (resxPathes.Length == 0 || !File.Exists(resxPathes.First()))

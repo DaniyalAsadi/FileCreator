@@ -26,9 +26,13 @@ public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGr
                 group.Key, group.ToList(), ns, options.OutputFolder));
         }
 
-        foreach (var endpoint in endpoints)
-            files.Add(codeGenerator.GenerateMapping(endpoint, ns, options.OutputFolder));
+        foreach (var group in endpoints.GroupBy(e => e.ServiceName))
+        {
+            foreach (var endpoint in group.ToList())
+                files.Add(codeGenerator.GenerateMapping(endpoint, group.Key, ns, options.OutputFolder));
 
+
+        }
         files.Add(codeGenerator.GenerateDiRegistration(
             endpoints.Select(e => e.ServiceName).Distinct(), ns, options.OutputFolder));
 

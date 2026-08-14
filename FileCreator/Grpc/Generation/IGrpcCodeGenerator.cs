@@ -9,7 +9,7 @@ namespace FileCreator.Grpc.Generation;
 public interface IGrpcCodeGenerator
 {
     IReadOnlyList<GeneratedFile> GenerateForServiceGroup(string serviceName, IReadOnlyList<EndpointModel> endpoints, string ns, string outputRoot);
-    GeneratedFile GenerateMapping(EndpointModel endpoint, string ns, string outputRoot);
+    GeneratedFile GenerateMapping(EndpointModel endpoint, string serviceName, string ns, string outputRoot);
     GeneratedFile GenerateDiRegistration(IEnumerable<string> serviceNames, string ns, string outputRoot);
 }
 
@@ -32,9 +32,9 @@ public sealed class GrpcCodeGenerator(
         ];
     }
 
-    public GeneratedFile GenerateMapping(EndpointModel endpoint, string ns, string outputRoot)
+    public GeneratedFile GenerateMapping(EndpointModel endpoint, string serviceName, string ns, string outputRoot)
     {
-        var relative = Path.Combine("Grpc", "Mappings", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
+        var relative = Path.Combine("Grpc", "Mappings",$"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
         return new GeneratedFile(Path.Combine(outputRoot, relative), mappingGenerator.Generate(endpoint, ns));
     }
 

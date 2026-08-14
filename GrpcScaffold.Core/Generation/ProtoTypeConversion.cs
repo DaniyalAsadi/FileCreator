@@ -1,6 +1,7 @@
 ﻿// src/GrpcScaffold.Core/Generation/ProtoTypeConversion.cs
 using GrpcScaffold.Core.Analysis.Models;
 using Microsoft.CodeAnalysis;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace GrpcScaffold.Core.Generation;
 
@@ -47,6 +48,8 @@ internal static class ProtoTypeConversion
         DateOnly,
         DateTime,
         DateTimeOffset,
+
+        Dictionary
     }
 
     /// <summary>Unwraps <c>Nullable&lt;T&gt;</c> down to <c>T</c>; returns the type unchanged otherwise.</summary>
@@ -73,7 +76,10 @@ internal static class ProtoTypeConversion
         if (unwrapped.SpecialType == SpecialType.System_Decimal)
             return ScalarKind.Decimal;
 
-        if (unwrapped is INamedTypeSymbol { ContainingNamespace.Name: "System" } named)
+        if (unwrapped is not INamedTypeSymbol named)
+            return ScalarKind.None;
+
+        if (named.ContainingNamespace.Name == "System")
         {
             return named.Name switch
             {
@@ -84,6 +90,9 @@ internal static class ProtoTypeConversion
                 _ => ScalarKind.None
             };
         }
+
+        if (IsDictionaryType(named))
+            return ScalarKind.Dictionary;
 
         return ScalarKind.None;
     }
@@ -146,6 +155,7 @@ internal static class ProtoTypeConversion
             ScalarKind.DateTimeOffset => $"{s}.ToDateTimeOffset()",
             ScalarKind.DateOnly => $"DateOnly.Parse({s}, System.Globalization.CultureInfo.InvariantCulture)",
             ScalarKind.Decimal => $"decimal.Parse({s}, System.Globalization.CultureInfo.InvariantCulture)",
+            ScalarKind.Dictionary => $"{{ {s}.Properties.ToMapField() }}",
             ScalarKind.None => s,
             _ => s // plain proto3 primitive (bool/int/long/float/double/string) — no conversion needed.
         };
@@ -189,6 +199,7 @@ internal static class ProtoTypeConversion
             ScalarKind.DateTimeOffset => $"Timestamp.FromDateTime({s}.UtcDateTime)",
             ScalarKind.DateOnly => $"{s}.ToString(\"O\", System.Globalization.CultureInfo.InvariantCulture)",
             ScalarKind.Decimal => $"{s}.ToString(System.Globalization.CultureInfo.InvariantCulture)",
+            ScalarKind.Dictionary => $"{{ {s}.Properties.ToMapField() }}",
             ScalarKind.None => s,
             _ => s
         };
@@ -256,5 +267,27 @@ internal static class ProtoTypeConversion
         }
 
         return ".ToList()";
+    }
+
+    private static bool IsDictionaryType(INamedTypeSymbol type)
+    {
+        if (type.TypeArguments.Length != 2)
+            return false;
+
+        var originalDefinition = type.OriginalDefinition;
+
+        return originalDefinition.ContainingNamespace.ToDisplayString() switch
+        {
+            "System.Collections.Generic"
+                => originalDefinition.Name switch
+                {
+                    "Dictionary" => true,
+                    "IDictionary" => true,
+                    "IReadOnlyDictionary" => true,
+                    _ => false
+                },
+
+            _ => false
+        };
     }
 }

@@ -23,7 +23,7 @@ public sealed class {{ service_name }}GrpcService(IMediator mediator)
         ServerCallContext context)
     {
         var message =
-            {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToQuery(request);
+            {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToQuery(request);
 
         var result =
             await mediator.Send(message, context.CancellationToken);
@@ -32,7 +32,7 @@ public sealed class {{ service_name }}GrpcService(IMediator mediator)
             throw result.ToRpcException();
 
 {{ if rpc.response }}
-        return {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToResponse(result);
+        return {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToResponse(result);
 {{ else }}
         return new Empty();
 {{ end }}
