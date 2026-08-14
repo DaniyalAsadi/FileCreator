@@ -25,7 +25,6 @@ public override async Task<{{ grpc_namespace }}.{{ service_name }}.{{ rpc.respon
     var message = {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToQuery(request);
 
     var result = await mediator.Send(message, context.CancellationToken);
-
 {{ if rpc.response }}
     return {{ grpc_namespace }}.{{ service_name }}.Mappings.{{ rpc.mapping_class_name }}.MapToResponse(result);
 {{ else }}

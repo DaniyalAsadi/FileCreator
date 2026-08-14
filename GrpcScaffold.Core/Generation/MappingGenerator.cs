@@ -72,21 +72,30 @@ public sealed class MappingGenerator(TemplateEngine templates)
         };
     }
 
-    private static Dictionary<string, object?> CreateField(ProtoFieldInfo field) => new()
+    private static Dictionary<string, object?> CreateField(ProtoFieldInfo field)
     {
-        ["name"] = field.Name,
-        ["proto_name"] = field.ProtoName,
+        var reference = field.Reference;
 
-        ["proto_type"] = field.Reference.ProtoTypeName,
-        ["clr_type"] = field.Reference.ClrType.ToDisplayString(),
+        return new Dictionary<string, object?>
+        {
+            ["name"] = field.Name,
+            ["proto_name"] = field.ProtoName,
 
-        ["is_enum"] = field.Reference.IsEnum,
-        ["is_message"] = field.Reference.IsMessage,
-        ["is_repeated"] = field.Reference.IsRepeated,
-        ["is_nullable"] = field.Reference.IsNullable,
-        ["is_well_known"] = field.Reference.IsWellKnownType,
-        ["needs_cast"] = ProtoTypeConversion.NeedsCast(field.Reference)
-    };
+            ["proto_type"] = reference.ProtoTypeName,
+            ["clr_type"] = reference.ClrType.ToDisplayString(),
+
+            ["is_enum"] = reference.IsEnum,
+            ["is_message"] = reference.IsMessage,
+            ["is_repeated"] = reference.IsRepeated,
+            ["is_nullable"] = reference.IsNullable,
+            ["is_well_known"] = reference.IsWellKnownType,
+
+            ["is_struct"] = reference.IsStruct,
+            ["is_map"] = reference.IsMap,
+
+            ["needs_cast"] = ProtoTypeConversion.NeedsCast(reference)
+        };
+    }
 
     private static Dictionary<string, object?> CreateConstructor(ConstructorInfo? ctor)
     {
@@ -124,13 +133,16 @@ public sealed class MappingGenerator(TemplateEngine templates)
         return list.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
     }
 
-    
+
     // ---------------------------------------------------------------------
     // request.<GrpcField> -> new MediatorMessage(...)
     // ---------------------------------------------------------------------
 
     private static IReadOnlyList<Dictionary<string, object?>> BuildRequestMappings(EndpointModel endpoint)
     {
+        if (endpoint.Request is null)
+            return [];
+
         var ctor = endpoint.MediatorMessage.PreferredConstructor;
         if (ctor is null || ctor.Parameters.Count == 0)
             return [];
@@ -237,45 +249,87 @@ public sealed class MappingGenerator(TemplateEngine templates)
     /// stripping the repeated flag, not by dereferencing a non-existent nested reference.
     /// </summary>
     private static string BuildProtoToClrExpression(
-        ProtoTypeReference reference,
-        string source,
-        IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
-        string collectionMaterializer = ".ToList()",
-        ISet<ITypeSymbol>? visiting = null)
+    ProtoTypeReference reference,
+    string source,
+    IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
+    string collectionMaterializer = ".ToList()",
+    ISet<ITypeSymbol>? visiting = null)
     {
-        visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        visiting ??= new HashSet<ITypeSymbol>(
+            SymbolEqualityComparer.Default);
 
         if (reference.IsRepeated)
         {
-            var element = reference with { IsRepeated = false };
+            var element = reference with
+            {
+                IsRepeated = false
+            };
+
             const string x = "x";
-            var elementExpr = BuildProtoToClrExpression(element, x, lookup, visiting: visiting);
-            var projected = elementExpr == x ? source : $"{source}.Select({x} => {elementExpr})";
+
+            var elementExpr = BuildProtoToClrExpression(
+                element,
+                x,
+                lookup,
+                visiting: visiting);
+
+            var projected =
+                elementExpr == x
+                    ? source
+                    : $"{source}.Select({x} => {elementExpr})";
+
             return $"{projected}{collectionMaterializer}";
+        }
+
+        // google.protobuf.Struct -> Dictionary<string, object?>
+        if (reference.IsStruct)
+        {
+            return $"{source}.Fields.ToDictionary(" +
+                   $"x => x.Key, " +
+                   $"x => x.Value.ToObject<object?>())";
+        }
+
+        // protobuf map
+        if (reference.IsMap)
+        {
+            return $"{source}.ToDictionary(x => x.Key, x => x.Value)";
         }
 
         if (reference.IsMessage)
         {
-            // Guard against self-referential / cyclic message graphs (e.g. a tree-shaped
-            // response). Without this, a recursive type would make the generator recurse
-            // forever trying to inline an infinitely nested expression.
             if (!visiting.Add(reference.ClrType))
+            {
                 return $"{source} /* TODO: recursive message type '{reference.ClrType.Name}' — map manually */";
+            }
 
             try
             {
-                if (lookup.TryGetValue(reference.ClrType, out var nested) && nested.PreferredConstructor is not null)
+                if (lookup.TryGetValue(
+                        reference.ClrType,
+                        out var nested) &&
+                    nested.PreferredConstructor is not null)
                 {
-                    var args = nested.PreferredConstructor.Parameters.Select(p =>
-                    {
-                        var nestedSourceName = p.SourceFieldName ?? p.Name;
-                        var nestedField = nested.Fields.FirstOrDefault(f =>
-                            string.Equals(f.Name, nestedSourceName, StringComparison.OrdinalIgnoreCase));
+                    var args =
+                        nested.PreferredConstructor.Parameters.Select(p =>
+                        {
+                            var nestedSourceName =
+                                p.SourceFieldName ?? p.Name;
 
-                        return nestedField is null
-                            ? $"default({p.TypeName}) /* TODO: could not resolve '{p.Name}' on {nested.Name} */"
-                            : BuildProtoToClrExpression(nestedField.Reference, $"{source}.{nestedField.Name}", lookup, visiting: visiting);
-                    });
+                            var nestedField =
+                                nested.Fields.FirstOrDefault(f =>
+                                    string.Equals(
+                                        f.Name,
+                                        nestedSourceName,
+                                        StringComparison.OrdinalIgnoreCase));
+
+                            return nestedField is null
+                                ? $"default({p.TypeName}) /* TODO: could not resolve '{p.Name}' on {nested.Name} */"
+                                : BuildProtoToClrExpression(
+                                    nestedField.Reference,
+                                    $"{source}.{nestedField.Name}",
+                                    lookup,
+                                    visiting: visiting);
+                        });
 
                     return $"new {nested.ClrType.ToDisplayString()}({string.Join(", ", args)})";
                 }
@@ -288,8 +342,10 @@ public sealed class MappingGenerator(TemplateEngine templates)
             }
         }
 
-        return ProtoTypeConversion.ProtoScalarToClr(reference, source);
-    }
+        return ProtoTypeConversion.ProtoScalarToClr(
+            reference,
+            source);
+    }   
 
     // ---------------------------------------------------------------------
     // result.<ClrField> -> new GrpcResponse { ... }
@@ -324,35 +380,59 @@ public sealed class MappingGenerator(TemplateEngine templates)
     /// without an intermediate <c>.ToList()</c>.
     /// </summary>
     private static string BuildClrToProtoExpression(
-        ProtoTypeReference reference,
-        string source,
-        IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
-        ISet<ITypeSymbol>? visiting = null)
+    ProtoTypeReference reference,
+    string source,
+    IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
+    ISet<ITypeSymbol>? visiting = null)
     {
         visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
-        // See the matching comment on BuildProtoToClrExpression: a repeated field's item shape
-        // lives on this same reference (ElementType is not populated by ProtoTypeMapper), so we
-        // recurse on a copy with IsRepeated cleared rather than a separate element reference.
         if (reference.IsRepeated)
         {
             var element = reference with { IsRepeated = false };
+
             const string x = "x";
-            var elementExpr = BuildClrToProtoExpression(element, x, lookup, visiting);
-            return elementExpr == x ? source : $"{source}.Select({x} => {elementExpr})";
+
+            var elementExpr = BuildClrToProtoExpression(
+                element,
+                x,
+                lookup,
+                visiting);
+
+            return elementExpr == x
+                ? source
+                : $"{source}.Select({x} => {elementExpr})";
+        }
+
+        // Dictionary<string, object?> -> google.protobuf.Struct
+        if (reference.IsStruct)
+        {
+            return $"Google.Protobuf.WellKnownTypes.Struct.FromDictionary({source})";
+        }
+
+        // Real protobuf map
+        if (reference.IsMap)
+        {
+            // TODO: map conversion
         }
 
         if (reference.IsMessage)
         {
             if (!visiting.Add(reference.ClrType))
+            {
                 return $"{source} /* TODO: recursive message type '{reference.ClrType.Name}' — map manually */";
+            }
 
             try
             {
                 if (lookup.TryGetValue(reference.ClrType, out var nested))
                 {
                     var assignments = nested.Fields.Select(f =>
-                        $"{f.Name} = {BuildClrToProtoExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting)}");
+                        $"{f.Name} = {BuildClrToProtoExpression(
+                            f.Reference,
+                            $"{source}.{f.Name}",
+                            lookup,
+                            visiting)}");
 
                     return $"new {reference.ProtoTypeName} {{ {string.Join(", ", assignments)} }}";
                 }
@@ -367,7 +447,6 @@ public sealed class MappingGenerator(TemplateEngine templates)
 
         return ProtoTypeConversion.ClrScalarToProto(reference, source);
     }
-
     // ---------------------------------------------------------------------
     // shared
     // ---------------------------------------------------------------------
