@@ -45,6 +45,18 @@ public sealed class GrpcGenerationCoordinator(
         return new GrpcGenerationResult(endpoints, files, options);
     }
 
-    public IReadOnlyList<WriteResult> Commit(GrpcGenerationResult result) =>
-        writer.Write(result.Files, result.Options);
+    public IReadOnlyList<WriteResult> Commit(GrpcGenerationResult result)
+    {
+        var csprojUpdater = new CsprojUpdater();
+        var csprojPath = Path.Combine(
+            result.Options.OutputFolder, 
+            $"{result.Options.ProjectName}.Web.csproj");
+        var writeResult = writer.Write(result.Files, result.Options);
+        csprojUpdater.EnsureProtoInclude(
+            csprojPath,
+            "Protos");
+
+        return writeResult;
+
+    }
 }

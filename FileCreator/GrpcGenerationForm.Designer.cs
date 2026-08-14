@@ -11,7 +11,6 @@ partial class GrpcGenerationForm
     private System.ComponentModel.IContainer components = null;
 
     private TextBox txtNamespace ;
-    private TextBox txtOutputFolder ;
     private TextBox txtEndpointFilter ;
 
     private CheckBox chkGenerateAll;
@@ -100,7 +99,6 @@ partial class GrpcGenerationForm
     private void InitializeComponent()
     {
         txtNamespace = new TextBox();
-        txtOutputFolder = new TextBox();
         txtEndpointFilter = new TextBox();
         chkGenerateAll = new CheckBox();
         chkInternalOnly = new CheckBox();
@@ -117,30 +115,22 @@ partial class GrpcGenerationForm
         txtNamespace.Location = new Point(20, 30);
         txtNamespace.Name = "txtNamespace";
         txtNamespace.PlaceholderText = "Namespace";
-        txtNamespace.Size = new Size(420, 23);
+        txtNamespace.Size = new Size(508, 23);
         txtNamespace.TabIndex = 0;
-        // 
-        // txtOutputFolder
-        // 
-        txtOutputFolder.Location = new Point(20, 75);
-        txtOutputFolder.Name = "txtOutputFolder";
-        txtOutputFolder.PlaceholderText = "Output Folder";
-        txtOutputFolder.Size = new Size(420, 23);
-        txtOutputFolder.TabIndex = 1;
         // 
         // txtEndpointFilter
         // 
-        txtEndpointFilter.Location = new Point(20, 120);
+        txtEndpointFilter.Location = new Point(20, 80);
         txtEndpointFilter.Name = "txtEndpointFilter";
         txtEndpointFilter.PlaceholderText = "Endpoint Filter (*User*)";
-        txtEndpointFilter.Size = new Size(420, 23);
-        txtEndpointFilter.TextChanged += TxtEndpointFilter_TextChanged;
+        txtEndpointFilter.Size = new Size(508, 23);
         txtEndpointFilter.TabIndex = 2;
+        txtEndpointFilter.TextChanged += TxtEndpointFilter_TextChanged;
         // 
         // chkGenerateAll
         // 
         chkGenerateAll.AutoSize = true;
-        chkGenerateAll.Location = new Point(20, 170);
+        chkGenerateAll.Location = new Point(20, 125);
         chkGenerateAll.Name = "chkGenerateAll";
         chkGenerateAll.Size = new Size(90, 19);
         chkGenerateAll.TabIndex = 3;
@@ -149,7 +139,7 @@ partial class GrpcGenerationForm
         // chkInternalOnly
         // 
         chkInternalOnly.AutoSize = true;
-        chkInternalOnly.Location = new Point(160, 170);
+        chkInternalOnly.Location = new Point(160, 125);
         chkInternalOnly.Name = "chkInternalOnly";
         chkInternalOnly.Size = new Size(94, 19);
         chkInternalOnly.TabIndex = 4;
@@ -158,7 +148,7 @@ partial class GrpcGenerationForm
         // chkDryRun
         // 
         chkDryRun.AutoSize = true;
-        chkDryRun.Location = new Point(20, 205);
+        chkDryRun.Location = new Point(20, 160);
         chkDryRun.Name = "chkDryRun";
         chkDryRun.Size = new Size(68, 19);
         chkDryRun.TabIndex = 5;
@@ -167,7 +157,7 @@ partial class GrpcGenerationForm
         // chkForce
         // 
         chkForce.AutoSize = true;
-        chkForce.Location = new Point(160, 205);
+        chkForce.Location = new Point(160, 160);
         chkForce.Name = "chkForce";
         chkForce.Size = new Size(55, 19);
         chkForce.TabIndex = 6;
@@ -176,7 +166,7 @@ partial class GrpcGenerationForm
         // chkStrict
         // 
         chkStrict.AutoSize = true;
-        chkStrict.Location = new Point(280, 205);
+        chkStrict.Location = new Point(280, 160);
         chkStrict.Name = "chkStrict";
         chkStrict.Size = new Size(53, 19);
         chkStrict.TabIndex = 7;
@@ -184,9 +174,9 @@ partial class GrpcGenerationForm
         // 
         // dgvEndpoints
         // 
-        dgvEndpoints.Location = new Point(20, 260);
+        dgvEndpoints.Location = new Point(20, 185);
         dgvEndpoints.Name = "dgvEndpoints";
-        dgvEndpoints.Size = new Size(420, 299);
+        dgvEndpoints.Size = new Size(508, 374);
         dgvEndpoints.TabIndex = 8;
         dgvEndpoints.Text = "Generate gRPC";
         // 
@@ -194,7 +184,7 @@ partial class GrpcGenerationForm
         // 
         btnGenerateGrpc.Location = new Point(20, 565);
         btnGenerateGrpc.Name = "btnGenerateGrpc";
-        btnGenerateGrpc.Size = new Size(420, 40);
+        btnGenerateGrpc.Size = new Size(508, 40);
         btnGenerateGrpc.TabIndex = 9;
         btnGenerateGrpc.Text = "Generate gRPC";
         btnGenerateGrpc.UseVisualStyleBackColor = true;
@@ -204,9 +194,8 @@ partial class GrpcGenerationForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(470, 615);
+        ClientSize = new Size(540, 615);
         Controls.Add(txtNamespace);
-        Controls.Add(txtOutputFolder);
         Controls.Add(txtEndpointFilter);
         Controls.Add(chkGenerateAll);
         Controls.Add(chkInternalOnly);

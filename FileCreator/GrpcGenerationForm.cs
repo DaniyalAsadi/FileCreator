@@ -1,16 +1,9 @@
-﻿using FileCreator.Core;
-using FileCreator.Grpc.Coordination;
+﻿using FileCreator.Grpc.Coordination;
 using FileCreator.Grpc.Discovery;
 using FileCreator.Grpc.ViewModels;
 using FileCreator.Services;
 using GrpcScaffold.Core.IO;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
 
 namespace FileCreator;
 
@@ -217,10 +210,7 @@ public partial class GrpcGenerationForm : Form
                     : txtNamespace.Text.Trim(),
 
 
-            OutputFolder =
-                !string.IsNullOrEmpty(txtOutputFolder.Text.Trim()) ? 
-                txtOutputFolder.Text.Trim() :
-                _context.Paths.WebBasePath,
+            OutputFolder = _context.Paths.WebBasePath,
 
 
             GenerateAll =
