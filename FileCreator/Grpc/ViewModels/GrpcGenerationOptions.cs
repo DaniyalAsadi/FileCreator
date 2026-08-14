@@ -9,7 +9,6 @@ public sealed class GrpcGenerationOptions
     public string ProjectName { get; set; } = string.Empty;
     public string SolutionPath { get; set; } = string.Empty;
     public string? Namespace { get; set; }
-    public string OutputFolder { get; set; } = string.Empty;
     public bool GenerateAll { get; set; } = true;
     public string? EndpointFilter { get; set; }
     public bool InternalOnly { get; set; }

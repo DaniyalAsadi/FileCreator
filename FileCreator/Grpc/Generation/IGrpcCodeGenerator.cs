@@ -4,6 +4,7 @@ using GrpcScaffold.Core.Generation;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using static System.Net.WebRequestMethods;
 
 namespace FileCreator.Grpc.Generation;
 
@@ -11,13 +12,16 @@ public interface IGrpcCodeGenerator
 {
     IReadOnlyList<GeneratedFile> GenerateForServiceGroup(string serviceName, IReadOnlyList<EndpointModel> endpoints, string ns);
     IReadOnlyList<GeneratedFile> GenerateMapping(EndpointModel endpoint, string serviceName, string ns);
+
     IReadOnlyList<GeneratedFile> GenerateDiRegistration(IEnumerable<string> serviceNames, string ns);
+    IReadOnlyList<GeneratedFile> GenerateContracts(EndpointModel endpoint, string serviceName, string ns);
 }
 
 public sealed class GrpcCodeGenerator(
     ProtoGenerator protoGenerator,
     GrpcServiceGenerator serviceGenerator,
     GrpcClientGenerator clientGenerator,
+    ContractGenerator contractGenerator,
     MappingGenerator mappingGenerator,
     DiRegistrationGenerator diGenerator,
     GenerationContext context) : IGrpcCodeGenerator
@@ -32,13 +36,19 @@ public sealed class GrpcCodeGenerator(
 
         return
         [
-            new GeneratedFile(Path.Combine(context.Paths.WebBasePath, protoRelative),
+            new GeneratedFile(
+                context.Paths.WebBasePath,
+                protoRelative,
                 protoGenerator.Generate(endpoints, ns)),
 
-            new GeneratedFile(Path.Combine(context.Paths.WebBasePath, serviceRelative),
+            new GeneratedFile(
+                context.Paths.WebBasePath, 
+                serviceRelative,
                 serviceGenerator.Generate(endpoints, ns)),
 
-            new GeneratedFile(Path.Combine(context.Paths.BffBasePath,serviceRelative),
+            new GeneratedFile(
+                context.Paths.BffBasePath, 
+                serviceRelative,
                 clientGenerator.Generate(endpoints, ns))
         ];
     }
@@ -49,12 +59,40 @@ public sealed class GrpcCodeGenerator(
         string ns)
     {
         var relative = Path.Combine("Grpc", "Mappings", $"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
-        return
+        
+        List<GeneratedFile> files =
         [
-            new GeneratedFile(
-                Path.Combine(context.Paths.WebBasePath, relative),
+            new(
+                context.Paths.WebBasePath, 
+                relative,
                 mappingGenerator.Generate(endpoint, ns))
         ];
+        
+        return files;
+    }
+
+    public IReadOnlyList<GeneratedFile> GenerateContracts(
+        EndpointModel endpoint,
+        string serviceName, 
+        string ns)
+    {
+        var contractRelatives = Path.Combine("Grpc", "Contracts", $"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
+        List<GeneratedFile> files = [];
+        if (endpoint.Request is not null)
+        {
+            files.Add(new(
+                context.Paths.BffBasePath, 
+                contractRelatives,
+                contractGenerator.GenerateRequest(endpoint, serviceName, ns)));
+        }
+        if (endpoint.Response is not null)
+        {
+            files.Add(new(
+                context.Paths.BffBasePath, 
+                contractRelatives,
+                contractGenerator.GenerateResponse(endpoint, serviceName, ns)));
+        }
+        return files;
     }
 
     public IReadOnlyList<GeneratedFile> GenerateDiRegistration(
@@ -65,7 +103,8 @@ public sealed class GrpcCodeGenerator(
         return
         [
             new GeneratedFile(
-                Path.Combine(context.Paths.WebBasePath, relative),
+                context.Paths.WebBasePath, 
+                relative,
                 diGenerator.Generate(serviceNames, ns))
         ];
     }

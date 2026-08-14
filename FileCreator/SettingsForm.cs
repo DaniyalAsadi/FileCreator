@@ -12,8 +12,10 @@ namespace FileCreator;
 
 public partial class SettingsForm : Form
 {
-    public SettingsForm()
+    private readonly GenerationContext _context;
+    public SettingsForm(GenerationContext context)
     {
+        _context = context;
         InitializeComponent();
         txtSolutionPath.Text = Properties.Settings.Default.SolutionPath;
     }
@@ -46,7 +48,10 @@ public partial class SettingsForm : Form
             string solutionFolder = Path.GetDirectoryName(slnPath)!;
             string solutionName = Path.GetFileNameWithoutExtension(slnPath);
             var projects = ExtractProjects(lines, solutionFolder);
-            var projectLines = JsonConvert.SerializeObject(projects, Formatting.Indented);
+            var projectLines = JsonConvert.SerializeObject(projects);
+            _context.SolutionPath = solutionFolder;
+            _context.SolutionName = solutionName;
+            _context.ProjectName = "";
             Properties.Settings.Default.SolutionPath = slnPath;
             Properties.Settings.Default.ProjectPathes = projectLines;
             Properties.Settings.Default.Save();

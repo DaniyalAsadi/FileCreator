@@ -83,19 +83,21 @@ public sealed class RoslynFileCreator(
         //// ------------------------ MediatorRequest ------------------------
         #region Request
         files.Add(new GeneratedFile(
-            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}.cs"),
+            useCasePath,
+            $"{UsecaseName}{RequestType}.cs",
             await fileCreator.GenerateAsync(MediatorRequestTemplateModelFactory.Create(
-            ns:usecaseNamespace,
+            ns: usecaseNamespace,
             useCaseName: UsecaseName,
-            requestType:RequestType,
-            hasResponse:HasResponse,
-            responseType:ResponseType))));
+            requestType: RequestType,
+            hasResponse: HasResponse,
+            responseType: ResponseType))));
         #endregion
 
 
         #region Request Handler
         files.Add(new GeneratedFile(
-            Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Handler.cs"),
+            useCasePath,
+            $"{UsecaseName}{RequestType}Handler.cs",
             await fileCreator.GenerateAsync(MediatorRequestHandlerTemplateModelFactory.Create(
                 ns: usecaseNamespace,
                 groupName: GroupName,
@@ -111,7 +113,8 @@ public sealed class RoslynFileCreator(
             if (ResponseType == ResponseType.PagedList)
             {
                 files.Add(new GeneratedFile(
-                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Filter.cs"),
+                    useCasePath,
+                    $"{UsecaseName}{RequestType}Filter.cs",
                     await fileCreator.GenerateAsync(MediatorRequestFiltersTemplateModelFactory.Create(
                         ns: usecaseNamespace,
                         useCaseName: UsecaseName,
@@ -123,10 +126,11 @@ public sealed class RoslynFileCreator(
             {
                 #region Request Response
                 files.Add(new GeneratedFile(
-                    Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Response.cs"),
+                    useCasePath,
+                    $"{UsecaseName}{RequestType}Response.cs",
                    await fileCreator.GenerateAsync(MediatorRequestResponseTemplateModelFactory.Create(
                        ns: usecaseNamespace,
-                       useCaseName: UsecaseName, 
+                       useCaseName: UsecaseName,
                        requestType: RequestType
                        ))));
                 #endregion
@@ -137,7 +141,8 @@ public sealed class RoslynFileCreator(
         {
             #region Request Specification
             files.Add(new GeneratedFile(
-                Path.Combine(useCasePath, $"{UsecaseName}{RequestType}Specification.cs"),
+                useCasePath,
+                $"{UsecaseName}{RequestType}Specification.cs",
                 await fileCreator.GenerateAsync(MediatorRequestSpecificationTemplateModelFactory.Create(
                     ns: usecaseNamespace,
                     useCaseName: UsecaseName,
@@ -146,7 +151,8 @@ public sealed class RoslynFileCreator(
             #endregion
             #region Request Service
             files.Add(new GeneratedFile(
-                Path.Combine(useCasePath, $"I{UsecaseName}Service.cs"),
+                useCasePath,
+                $"I{UsecaseName}Service.cs",
                 await fileCreator.GenerateAsync(MediatorRequestServiceTemplateModelFactory.Create(
                     ns: usecaseNamespace,
                     useCaseName: UsecaseName,
@@ -155,7 +161,8 @@ public sealed class RoslynFileCreator(
             #endregion
             #region Request Service Implementation
             files.Add(new GeneratedFile(
-                Path.Combine(infrastructureService, $"{UsecaseName}Service.cs"),
+               infrastructureService,
+               $"{UsecaseName}Service.cs",
                 await fileCreator.GenerateAsync(MediatorRequestServiceImplementationTemplateModelFactory.Create(
                     ns: infrastructureNamespace,
                     useCaseNamespace: usecaseNamespace,
@@ -167,8 +174,10 @@ public sealed class RoslynFileCreator(
 
         //// ------------------------ Endpoint ------------------------
         #region EndPoint
-        files.Add(new GeneratedFile(
-            Path.Combine(endpointPath, $"{UsecaseName}.cs"),
+        files.Add(
+            new GeneratedFile(
+            endpointPath,
+            $"{UsecaseName}.cs",
             await fileCreator.GenerateAsync(EndpointTemplateModelFactory.Create(
             projectName: ProjectName,
             useCaseNamespace: usecaseNamespace,
@@ -186,7 +195,8 @@ public sealed class RoslynFileCreator(
         {
             #region Endpoint Request
             files.Add(new GeneratedFile(
-                Path.Combine(endpointPath, $"{UsecaseName}Request.cs"),
+                endpointPath,
+                $"{UsecaseName}Request.cs",
                 await fileCreator.GenerateAsync(EndpointRequestTemplateModelFactory.Create(
                     ns: webNamespace,
                     useCaseNameSpace: usecaseNamespace,
@@ -198,9 +208,10 @@ public sealed class RoslynFileCreator(
             #endregion
             #region Endpoint Request Validator
             files.Add(new GeneratedFile(
-                Path.Combine(endpointPath, $"{UsecaseName}Validator.cs"),
+                endpointPath,
+                $"{UsecaseName}Validator.cs",
                 await fileCreator.GenerateAsync(EndpointRequestValidatorTemplateModelFactory.Create(
-                    webNamespace, 
+                    webNamespace,
                     UsecaseName))
             ));
             #endregion
@@ -208,7 +219,8 @@ public sealed class RoslynFileCreator(
 
         // ------------------------ Tests ------------------------
         files.Add(new GeneratedFile(
-            Path.Combine(functionalPath, $"{UsecaseName}Tests.cs"),
+            functionalPath,
+            $"{UsecaseName}Tests.cs",
             await fileCreator.GenerateAsync(EndpointTestTemplateModelFactory.Create(
                 ns: functionalNamespace,
                 projectName: ProjectName,
@@ -224,7 +236,8 @@ public sealed class RoslynFileCreator(
         ));
 
         files.Add(new GeneratedFile(
-            Path.Combine(unitTestPath, $"{UsecaseName}{RequestType}HandlerTests.cs"),
+            unitTestPath,
+            $"{UsecaseName}{RequestType}HandlerTests.cs",
             await fileCreator.GenerateAsync(MediatorRequestHandlerTestTemplateModelFactory.Create(
                 ns: unitTestNamespace,
                 groupName: GroupName,
@@ -245,12 +258,12 @@ public sealed class RoslynFileCreator(
     {
         foreach (var file in files)
         {
-            var dir = Path.GetDirectoryName(file.Path)!;
+            var dir = Path.GetDirectoryName(file.AbsolutePath)!;
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            if (!File.Exists(file.Path))
-                File.WriteAllText(file.Path, file.Content, Encoding.UTF8);
+            if (!File.Exists(file.AbsolutePath))
+                File.WriteAllText(file.AbsolutePath, file.Content, Encoding.UTF8);
         }
     }
 }

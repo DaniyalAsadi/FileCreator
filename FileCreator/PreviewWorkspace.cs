@@ -119,11 +119,11 @@ public sealed class PreviewWorkspace : IDisposable
 
         foreach (var file in files)
         {
-            var projectId = ResolveProjectForFile(file.Path);
+            var projectId = ResolveProjectForFile(file.AbsolutePath);
 
-            var docId = DocumentId.CreateNewId(projectId, file.Path);
+            var docId = DocumentId.CreateNewId(projectId, file.AbsolutePath);
 
-            solution = solution.AddDocument(docId, file.Path, SourceText.From(file.Content));
+            solution = solution.AddDocument(docId, file.AbsolutePath, SourceText.From(file.Content));
         }
 
         _solution = solution;
@@ -169,7 +169,7 @@ public sealed class PreviewWorkspace : IDisposable
         if (!_isWarmedUp)
             await WarmupAsync();
 
-        var projectId = ResolveProjectForFile(file.Path);
+        var projectId = ResolveProjectForFile(file.AbsolutePath);
         var project = _solution.GetProject(projectId)!;
 
         var tempDoc = project.AddDocument("Preview_" + Guid.NewGuid() + ".cs",

@@ -30,7 +30,7 @@ public partial class PreviewForm : Form
     {
         foreach (var file in _files)
         {
-            var tab = new TabPage(Path.GetFileName(file.Path))
+            var tab = new TabPage(Path.GetFileName(file.AbsolutePath))
             {
                 BackColor = Color.FromArgb(30, 30, 30)
             };

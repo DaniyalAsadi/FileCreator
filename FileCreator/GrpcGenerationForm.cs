@@ -181,8 +181,6 @@ public partial class GrpcGenerationForm : Form
                     : txtNamespace.Text.Trim(),
 
 
-            OutputFolder = _context.Paths.WebBasePath,
-
 
             GenerateAll =
                 chkGenerateAll.Checked,
