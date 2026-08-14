@@ -26,9 +26,6 @@ public sealed class GrpcGenerationOptions
         if (GenerateAll && !string.IsNullOrWhiteSpace(EndpointFilter))
             errors.Add("Generate All نمی‌تواند همراه با Endpoint Filter استفاده شود.");
 
-        if (string.IsNullOrWhiteSpace(OutputFolder))
-            errors.Add("Output Folder الزامی است.");
-
         return errors;
     }
 }
