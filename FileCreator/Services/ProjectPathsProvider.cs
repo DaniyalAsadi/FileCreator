@@ -18,7 +18,9 @@ public record ProjectPaths(
     string SharedKernelTestsBasePath = "",
     string InfrastructureBasePath = "",
     string LocalizationBasePath = "",
-    string SharedKernelToolsTestsBasePath = "");
+    string SharedKernelToolsTestsBasePath = "",
+    string BffBasePath = "",
+    string PresentationBasePath = "");
 
 public class ProjectPathsProvider : IProjectPathsProvider
 {
@@ -41,6 +43,8 @@ public class ProjectPathsProvider : IProjectPathsProvider
             Resolve("SharedKernel"),
             Resolve($"{projectName}.Infrastructure"),
             Resolve("Localization"),
-            Resolve("SharedKernel.Tools"));
+            Resolve("SharedKernel.Tools"),
+            Resolve("Presentation.Bff"),
+            Resolve("Presentation"));
     }
 }

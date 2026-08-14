@@ -20,6 +20,7 @@ public static class GrpcServiceCollectionExtensions
         services.AddSingleton<ProtoGenerator>();
         services.AddSingleton<TemplateEngine>();
         services.AddSingleton<GrpcServiceGenerator>();
+        services.AddSingleton<GrpcClientGenerator>();
         services.AddSingleton<MappingGenerator>();
         services.AddSingleton<DiRegistrationGenerator>();
         services.AddSingleton<IGrpcCodeGenerator, GrpcCodeGenerator>();

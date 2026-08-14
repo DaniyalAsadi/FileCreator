@@ -13,7 +13,7 @@ public interface IGrpcPreviewGenerator
     IReadOnlyList<GeneratedFile> Generate(ImmutableArray<EndpointModel> endpoints, GrpcGenerationOptions options);
 }
 
-public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGrpcPreviewGenerator
+public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator,GenerationContext context) : IGrpcPreviewGenerator
 {
     public IReadOnlyList<GeneratedFile> Generate(ImmutableArray<EndpointModel> endpoints, GrpcGenerationOptions options)
     {
@@ -23,18 +23,15 @@ public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGr
         foreach (var group in endpoints.GroupBy(e => e.ServiceName))
         {
             files.AddRange(codeGenerator.GenerateForServiceGroup(
-                group.Key, group.ToList(), ns, options.OutputFolder));
+                group.Key, [.. group], ns));
         }
 
         foreach (var group in endpoints.GroupBy(e => e.ServiceName))
         {
             foreach (var endpoint in group.ToList())
-                files.Add(codeGenerator.GenerateMapping(endpoint, group.Key, ns, options.OutputFolder));
-
-
+                files.AddRange(codeGenerator.GenerateMapping(endpoint, group.Key, ns));
         }
-        files.Add(codeGenerator.GenerateDiRegistration(
-            endpoints.Select(e => e.ServiceName).Distinct(), ns, options.OutputFolder));
+        files.AddRange(codeGenerator.GenerateDiRegistration(endpoints.Select(e => e.ServiceName).Distinct(), ns));
 
         return files;
     }

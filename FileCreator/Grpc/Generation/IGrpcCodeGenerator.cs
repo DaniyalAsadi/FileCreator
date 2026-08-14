@@ -1,4 +1,5 @@
-﻿using GrpcScaffold.Core.Analysis.Models;
+﻿using FileCreator.Services;
+using GrpcScaffold.Core.Analysis.Models;
 using GrpcScaffold.Core.Generation;
 using System;
 using System.Collections.Generic;
@@ -8,39 +9,64 @@ namespace FileCreator.Grpc.Generation;
 
 public interface IGrpcCodeGenerator
 {
-    IReadOnlyList<GeneratedFile> GenerateForServiceGroup(string serviceName, IReadOnlyList<EndpointModel> endpoints, string ns, string outputRoot);
-    GeneratedFile GenerateMapping(EndpointModel endpoint, string serviceName, string ns, string outputRoot);
-    GeneratedFile GenerateDiRegistration(IEnumerable<string> serviceNames, string ns, string outputRoot);
+    IReadOnlyList<GeneratedFile> GenerateForServiceGroup(string serviceName, IReadOnlyList<EndpointModel> endpoints, string ns);
+    IReadOnlyList<GeneratedFile> GenerateMapping(EndpointModel endpoint, string serviceName, string ns);
+    IReadOnlyList<GeneratedFile> GenerateDiRegistration(IEnumerable<string> serviceNames, string ns);
 }
 
 public sealed class GrpcCodeGenerator(
     ProtoGenerator protoGenerator,
     GrpcServiceGenerator serviceGenerator,
+    GrpcClientGenerator clientGenerator,
     MappingGenerator mappingGenerator,
-    DiRegistrationGenerator diGenerator) : IGrpcCodeGenerator
+    DiRegistrationGenerator diGenerator,
+    GenerationContext context) : IGrpcCodeGenerator
 {
     public IReadOnlyList<GeneratedFile> GenerateForServiceGroup(
-        string serviceName, IReadOnlyList<EndpointModel> endpoints, string ns, string outputRoot)
+        string serviceName,
+        IReadOnlyList<EndpointModel> endpoints,
+        string ns)
     {
         var protoRelative = Path.Combine("Grpc", "Protos", $"{serviceName}.proto");
         var serviceRelative = Path.Combine("Grpc", "Services", $"{serviceName}GrpcService.cs");
 
         return
         [
-            new GeneratedFile(Path.Combine(outputRoot, protoRelative), protoGenerator.Generate(endpoints, ns)),
-            new GeneratedFile(Path.Combine(outputRoot, serviceRelative), serviceGenerator.Generate(endpoints, ns))
+            new GeneratedFile(Path.Combine(context.Paths.WebBasePath, protoRelative),
+                protoGenerator.Generate(endpoints, ns)),
+
+            new GeneratedFile(Path.Combine(context.Paths.WebBasePath, serviceRelative),
+                serviceGenerator.Generate(endpoints, ns)),
+
+            new GeneratedFile(Path.Combine(context.Paths.BffBasePath,serviceRelative),
+                clientGenerator.Generate(endpoints, ns))
         ];
     }
 
-    public GeneratedFile GenerateMapping(EndpointModel endpoint, string serviceName, string ns, string outputRoot)
+    public IReadOnlyList<GeneratedFile> GenerateMapping(
+        EndpointModel endpoint,
+        string serviceName,
+        string ns)
     {
-        var relative = Path.Combine("Grpc", "Mappings",$"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
-        return new GeneratedFile(Path.Combine(outputRoot, relative), mappingGenerator.Generate(endpoint, ns));
+        var relative = Path.Combine("Grpc", "Mappings", $"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
+        return
+        [
+            new GeneratedFile(
+                Path.Combine(context.Paths.WebBasePath, relative),
+                mappingGenerator.Generate(endpoint, ns))
+        ];
     }
 
-    public GeneratedFile GenerateDiRegistration(IEnumerable<string> serviceNames, string ns, string outputRoot)
+    public IReadOnlyList<GeneratedFile> GenerateDiRegistration(
+        IEnumerable<string> serviceNames,
+        string ns)
     {
         var relative = Path.Combine("Grpc", "GrpcServiceRegistration.g.cs");
-        return new GeneratedFile(Path.Combine(outputRoot, relative), diGenerator.Generate(serviceNames, ns));
+        return
+        [
+            new GeneratedFile(
+                Path.Combine(context.Paths.WebBasePath, relative),
+                diGenerator.Generate(serviceNames, ns))
+        ];
     }
 }

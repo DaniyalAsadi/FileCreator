@@ -15,7 +15,6 @@ public partial class GrpcGenerationForm : Form
 
     private readonly IEndpointDiscoveryService _endpointDiscovery;
 
-    private readonly IProjectPathsProvider _pathsProvider;
     private readonly GenerationContext _context;
 
     private List<EndpointSelectionItem> _allEndpoints = [];
@@ -25,13 +24,11 @@ public partial class GrpcGenerationForm : Form
         GrpcGenerationCoordinator coordinator,
         GenerationContext context,
         IWorkspaceCache workspaceCache,
-        IProjectPathsProvider projectPathsProvider,
         IEndpointDiscoveryService endpointDiscovery)
     {
         _coordinator = coordinator;
         _workspaceCache = workspaceCache;
         _endpointDiscovery = endpointDiscovery;
-        _pathsProvider = projectPathsProvider;
         _context = context;
         InitializeComponent();
         ConfigureEndpointGrid();
@@ -48,38 +45,12 @@ public partial class GrpcGenerationForm : Form
             Close();
             return;
         }
-        LoadSettings(_context.ProjectName);
         await LoadEndpointsAsync();
-    }
-    private void LoadSettings(string projectName)
-    {
-        var _slnPath = Properties.Settings.Default.SolutionPath;
-        var _solutionName = Path.GetFileNameWithoutExtension(_slnPath);
-        var _projectName = projectName;
-        _context.ProjectName = _projectName;
-        _context.SolutionPath = _slnPath;
-        _context.SolutionName = _solutionName;
-
-        // همه‌ی مسیرها یک‌جا resolve می‌شن و در GenerationContext می‌شینن
-        _context.Paths = _pathsProvider.Load(projectName, _slnPath);
-
-        btnGenerateGrpc.Enabled =
-            !string.IsNullOrWhiteSpace(_context.SolutionPath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.UseCasesBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.WebBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.FunctionalTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.UnitTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.SharedKernelTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.InfrastructureBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.LocalizationBasePath) &&
-            !string.IsNullOrEmpty(_context.Paths.SharedKernelToolsTestsBasePath);
-
-
     }
     private void SetEndpoints(
     IReadOnlyList<EndpointSelectionItem> endpoints)
     {
-        _allEndpoints = endpoints.ToList();
+        _allEndpoints = [.. endpoints];
 
         ApplyEndpointFilter();
     }
