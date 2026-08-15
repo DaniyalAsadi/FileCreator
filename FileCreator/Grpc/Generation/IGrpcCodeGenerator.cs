@@ -76,20 +76,20 @@ public sealed class GrpcCodeGenerator(
         string serviceName, 
         string ns)
     {
-        var contractRelatives = Path.Combine("Grpc", "Contracts", $"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
+        var contractRelatives = Path.Combine("Grpc", "Contracts", $"The{serviceName}");
         List<GeneratedFile> files = [];
         if (endpoint.Request is not null)
         {
             files.Add(new(
                 context.Paths.BffBasePath, 
-                contractRelatives,
+                Path.Combine( contractRelatives, $"{endpoint.Request.Name}.g.cs"),
                 contractGenerator.GenerateRequest(endpoint, serviceName, ns)));
         }
         if (endpoint.Response is not null)
         {
             files.Add(new(
-                context.Paths.BffBasePath, 
-                contractRelatives,
+                context.Paths.BffBasePath,
+                Path.Combine(contractRelatives, $"{endpoint.Response.Name}.g.cs"),
                 contractGenerator.GenerateResponse(endpoint, serviceName, ns)));
         }
         return files;

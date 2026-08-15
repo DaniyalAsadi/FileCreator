@@ -112,8 +112,10 @@ public partial class FileCreatorForm : Form
 
     private void BtnSettings_Click(object sender, EventArgs e)
     {
-        using var frm = new SettingsForm();
+        using var scope = _serviceProvider.CreateScope();
 
+        var frm = scope.ServiceProvider.GetRequiredService<SettingsForm>();
+        
         if (frm.ShowDialog(this) == DialogResult.OK)
         {
             LoadSettings(cmbProjectName.Text);
