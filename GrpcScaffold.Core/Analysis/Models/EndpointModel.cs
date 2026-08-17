@@ -4,6 +4,7 @@ namespace GrpcScaffold.Core.Analysis.Models;
 public enum EndpointVisibility { Internal, External, Unknown }
 
 public sealed record EndpointModel(
+    string EndpointGroupName,
     string EndpointClassName,      // "ApiResourceListEndpoint"
     string EndpointNamespace,      // "MyApp.Api.Endpoints.ApiResource"
     string ServiceName,            // "ApiResourceService" (derived from Group or class name)

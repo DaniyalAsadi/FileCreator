@@ -3,12 +3,14 @@ using FileCreator.Grpc.Discovery;
 using FileCreator.Grpc.ViewModels;
 using FileCreator.Services;
 using GrpcScaffold.Core.IO;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Data;
 
 namespace FileCreator;
 
 public partial class GrpcGenerationForm : Form
 {
+    private const string EmptyCmbText = "----";
     private readonly GrpcGenerationCoordinator _coordinator;
 
     private readonly IWorkspaceCache _workspaceCache;
@@ -18,6 +20,8 @@ public partial class GrpcGenerationForm : Form
     private readonly GenerationContext _context;
 
     private List<EndpointSelectionItem> _allEndpoints = [];
+
+    private List<string> _allGroups = [];
 
 
     public GrpcGenerationForm(
@@ -56,6 +60,7 @@ public partial class GrpcGenerationForm : Form
     }
 
 
+
     private async Task LoadEndpointsAsync()
     {
         try
@@ -73,7 +78,12 @@ public partial class GrpcGenerationForm : Form
 
             SetEndpoints([.. endpoints
                 .Select(EndpointSelectionItem.Map)]);
+       
+            _allGroups = [EmptyCmbText];
 
+            _allGroups.AddRange(endpoints.GroupBy(e => e.EndpointGroupName).Select(e => e.Key));
+
+            cmbGroupName.DataSource = _allGroups.ToList();
         }
         catch (Exception ex)
         {
@@ -175,13 +185,6 @@ public partial class GrpcGenerationForm : Form
 
             SolutionPath = _context.SolutionPath,
 
-            Namespace =
-                string.IsNullOrWhiteSpace(txtNamespace.Text.Trim())
-                    ? null
-                    : txtNamespace.Text.Trim(),
-
-
-
             GenerateAll =
                 chkGenerateAll.Checked,
 
@@ -241,16 +244,24 @@ public partial class GrpcGenerationForm : Form
     {
         ApplyEndpointFilter();
     }
+
+    private void cmbGroupName_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        ApplyEndpointFilter();
+    }
     private void ApplyEndpointFilter()
     {
         var filter = txtEndpointFilter.Text.Trim();
 
-        var filtered = string.IsNullOrWhiteSpace(filter)
-            ? _allEndpoints
-            : [.. _allEndpoints
-                .Where(x =>
-                    EndpointFilter.GlobMatch($"*{filter}*",x.Name))];
+        var groupSearch = cmbGroupName.Text.Trim() == EmptyCmbText ? string.Empty : cmbGroupName.Text.Trim();
 
+        var filtered = _allEndpoints.ToList();
+        if(!string.IsNullOrEmpty(groupSearch))
+        {
+            filtered = [.. filtered.Where(x => x.GroupName == groupSearch)];
+        }
+        if (string.IsNullOrEmpty(filter))
+            filtered = [.. filtered.Where(x => EndpointFilter.GlobMatch($"*{filter}*", x.Name))];
         dgvEndpoints.DataSource = null;
         dgvEndpoints.DataSource = filtered;
     }

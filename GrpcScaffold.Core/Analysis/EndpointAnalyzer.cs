@@ -164,6 +164,7 @@ public sealed class EndpointAnalyzer(AnalysisContext context, VisibilityResolver
         var rpcName = DeriveRpcName(classSymbol.Name, serviceName, route.HttpVerb);
 
         return new EndpointModel(
+            EndpointGroupName:api.Tag,
             EndpointClassName: classSymbol.Name,
             EndpointNamespace: classSymbol.ContainingNamespace.ToDisplayString(),
             ServiceName: serviceName,

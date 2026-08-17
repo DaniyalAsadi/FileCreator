@@ -28,7 +28,8 @@ public sealed class GrpcGenerationCoordinator(
         if (validationErrors.Count > 0)
             throw new InvalidOperationException(string.Join(Environment.NewLine, validationErrors));
 
-        var endpoints = await discovery.DiscoverAsync(options);
+
+        ImmutableArray<EndpointModel> endpoints = await discovery.DiscoverAsync(options);
 
         if (endpoints.IsEmpty)
             throw new InvalidOperationException("هیچ Endpoint منطبقی پیدا نشد.");

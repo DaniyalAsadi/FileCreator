@@ -9,8 +9,6 @@ partial class GrpcGenerationForm
     /// Required designer variable.
     /// </summary>
     private System.ComponentModel.IContainer components = null;
-
-    private TextBox txtNamespace ;
     private TextBox txtEndpointFilter ;
 
     private CheckBox chkGenerateAll;
@@ -19,9 +17,11 @@ partial class GrpcGenerationForm
     private CheckBox chkForce;
     private CheckBox chkStrict;
 
+    private ComboBox cmbGroupName;
     private DataGridView dgvEndpoints;
 
     private Button btnGenerateGrpc;
+
 
     private void ConfigureEndpointGrid()
     {
@@ -44,6 +44,14 @@ partial class GrpcGenerationForm
         };
 
         dgvEndpoints.Columns.Add(selectionColumn);
+
+        dgvEndpoints.Columns.Add(
+            new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = nameof(EndpointSelectionItem.GroupName),
+                HeaderText = "Group",
+                Width = 200
+            });
 
         dgvEndpoints.Columns.Add(
             new DataGridViewTextBoxColumn
@@ -98,7 +106,6 @@ partial class GrpcGenerationForm
     /// </summary>
     private void InitializeComponent()
     {
-        txtNamespace = new TextBox();
         txtEndpointFilter = new TextBox();
         chkGenerateAll = new CheckBox();
         chkInternalOnly = new CheckBox();
@@ -107,16 +114,9 @@ partial class GrpcGenerationForm
         chkStrict = new CheckBox();
         dgvEndpoints = new DataGridView();
         btnGenerateGrpc = new Button();
+        cmbGroupName = new ComboBox();
         ((System.ComponentModel.ISupportInitialize)dgvEndpoints).BeginInit();
         SuspendLayout();
-        // 
-        // txtNamespace
-        // 
-        txtNamespace.Location = new Point(20, 30);
-        txtNamespace.Name = "txtNamespace";
-        txtNamespace.PlaceholderText = "Namespace";
-        txtNamespace.Size = new Size(508, 23);
-        txtNamespace.TabIndex = 0;
         // 
         // txtEndpointFilter
         // 
@@ -190,12 +190,21 @@ partial class GrpcGenerationForm
         btnGenerateGrpc.UseVisualStyleBackColor = true;
         btnGenerateGrpc.Click += BtnGenerateGrpc_Click;
         // 
+        // cmbGroupName
+        // 
+        cmbGroupName.FormattingEnabled = true;
+        cmbGroupName.Location = new Point(20, 34);
+        cmbGroupName.Name = "cmbGroupName";
+        cmbGroupName.Size = new Size(508, 23);
+        cmbGroupName.TabIndex = 10;
+        cmbGroupName.SelectedIndexChanged += cmbGroupName_SelectedIndexChanged;
+        // 
         // GrpcGenerationForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(540, 615);
-        Controls.Add(txtNamespace);
+        Controls.Add(cmbGroupName);
         Controls.Add(txtEndpointFilter);
         Controls.Add(chkGenerateAll);
         Controls.Add(chkInternalOnly);
@@ -228,4 +237,5 @@ partial class GrpcGenerationForm
         dgvEndpoints.Refresh();
     }
     #endregion
+
 }

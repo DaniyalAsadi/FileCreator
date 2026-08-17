@@ -10,6 +10,8 @@ public sealed record EndpointSelectionItem
 {
     public bool Selected { get; set; }
 
+    public string GroupName { get; init; } = default!;
+
     public string Name { get; init; } = default!;
 
     public string Route { get; init; } = default!;
@@ -26,6 +28,7 @@ public sealed record EndpointSelectionItem
         return new EndpointSelectionItem()
         {
             Selected = false,
+            GroupName = endpoint.Route.Group,
             Name = endpoint.EndpointClassName,
             Route = endpoint.Route.Route,
             HttpVerb = Enum.Parse<HttpVerb>(endpoint.Route.HttpVerb),
@@ -33,4 +36,5 @@ public sealed record EndpointSelectionItem
             ResponseType = endpoint.Response?.Name ?? ""
         };
     }
+
 }

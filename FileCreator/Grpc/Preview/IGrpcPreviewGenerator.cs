@@ -17,24 +17,21 @@ public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGr
 {
     public IReadOnlyList<GeneratedFile> Generate(ImmutableArray<EndpointModel> endpoints, GrpcGenerationOptions options)
     {
-        var ns = options.Namespace ?? $"{endpoints[0].EndpointNamespace.Split('.')[0]}.Grpc";
+        
         var files = new List<GeneratedFile>();
 
         foreach (var group in endpoints.GroupBy(e => e.ServiceName))
         {
             files.AddRange(codeGenerator.GenerateForServiceGroup(
-                group.Key, [.. group], ns));
-        }
-
-        foreach (var group in endpoints.GroupBy(e => e.ServiceName))
-        {
+                group.Key, [.. group]));
             foreach (var endpoint in group.ToList())
             {
-                files.AddRange(codeGenerator.GenerateContracts(endpoint, group.Key, ns));
-                files.AddRange(codeGenerator.GenerateMapping(endpoint, group.Key, ns));
+                files.AddRange(codeGenerator.GenerateContracts(endpoint, group.Key));
+                files.AddRange(codeGenerator.GenerateMapping(endpoint, group.Key));
             }
         }
-        files.AddRange(codeGenerator.GenerateDiRegistration(endpoints.Select(e => e.ServiceName).Distinct(), ns));
+
+        files.AddRange(codeGenerator.GenerateDiRegistration(endpoints.Select(e => e.ServiceName).Distinct()));
 
         return files;
     }
