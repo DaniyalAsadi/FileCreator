@@ -17,8 +17,11 @@ public sealed class TemplateEngine
     private static Template LoadTemplate(string resourceName)
     {
         var assembly = typeof(TemplateEngine).Assembly;
-        var fullName = assembly.GetManifestResourceNames()
-            .Single(n => n.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase));
+        var resources = assembly.GetManifestResourceNames();
+        var fullName = 
+            resources.FirstOrDefault(n => Path.GetFileName(n) == $"GrpcScaffold.Core.Templates.{resourceName}");
+        if (fullName is null)
+            throw new InvalidOperationException(resourceName);
 
         using var stream = assembly.GetManifestResourceStream(fullName)!;
         using var reader = new StreamReader(stream);

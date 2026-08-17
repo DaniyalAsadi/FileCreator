@@ -25,7 +25,7 @@ public sealed class ProtoGenerator(TemplateEngine templates)
             ["messages"] = BuildMessages(endpoints),
             ["enums"] = BuildEnums(endpoints)
         };
-        return templates.Render("service.proto.sbn", model);
+        return templates.Render("service-proto.sbn", model);
     }
 
     private static List<string> BuildImports(

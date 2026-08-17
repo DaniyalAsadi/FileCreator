@@ -204,11 +204,6 @@ public partial class FileCreatorForm : Form
         {
             UseWaitCursor = true;
 
-
-
-
-
-
             // 1️⃣ Generate Roslyn Files (memory only)
             var generator = new RoslynFileCreator(
                 projectName: _projectName,

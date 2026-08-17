@@ -24,6 +24,7 @@ public static class GrpcServiceCollectionExtensions
         services.AddSingleton<ContractGenerator>();
         services.AddSingleton<MappingGenerator>();
         services.AddSingleton<DiRegistrationGenerator>();
+        services.AddSingleton<ClientMappingGenerator>();
         services.AddSingleton<IGrpcCodeGenerator, GrpcCodeGenerator>();
         services.AddSingleton<IGrpcPreviewGenerator, GrpcPreviewGenerator>();
         services.AddSingleton<IGrpcFileWriter, GrpcFileWriter>();

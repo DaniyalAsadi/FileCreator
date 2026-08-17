@@ -24,6 +24,7 @@ public sealed class GrpcCodeGenerator(
     ContractGenerator contractGenerator,
     MappingGenerator mappingGenerator,
     DiRegistrationGenerator diGenerator,
+    ClientMappingGenerator clientMappingGenerator,
     GenerationContext context) : IGrpcCodeGenerator
 {
     public IReadOnlyList<GeneratedFile> GenerateForServiceGroup(
@@ -65,7 +66,11 @@ public sealed class GrpcCodeGenerator(
             new(
                 context.Paths.WebBasePath, 
                 relative,
-                mappingGenerator.Generate(endpoint, ns))
+                mappingGenerator.Generate(endpoint, ns)),
+            new(
+                context.Paths.BffBasePath,
+                relative,
+                clientMappingGenerator.Generate(endpoint, ns))
         ];
         
         return files;
