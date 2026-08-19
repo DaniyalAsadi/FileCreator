@@ -197,6 +197,7 @@ partial class GrpcGenerationForm
         cmbGroupName.Name = "cmbGroupName";
         cmbGroupName.Size = new Size(508, 23);
         cmbGroupName.TabIndex = 10;
+        cmbGroupName.DropDownStyle = ComboBoxStyle.DropDownList;
         cmbGroupName.SelectedIndexChanged += cmbGroupName_SelectedIndexChanged;
         // 
         // GrpcGenerationForm

@@ -260,7 +260,7 @@ public partial class GrpcGenerationForm : Form
         {
             filtered = [.. filtered.Where(x => x.GroupName == groupSearch)];
         }
-        if (string.IsNullOrEmpty(filter))
+        if (!string.IsNullOrEmpty(filter))
             filtered = [.. filtered.Where(x => EndpointFilter.GlobMatch($"*{filter}*", x.Name))];
         dgvEndpoints.DataSource = null;
         dgvEndpoints.DataSource = filtered;

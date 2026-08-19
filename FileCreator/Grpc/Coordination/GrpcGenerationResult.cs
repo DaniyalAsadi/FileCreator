@@ -56,7 +56,7 @@ public sealed class GrpcGenerationCoordinator(
         var writeResult = writer.Write(result.Files, result.Options);
         csprojUpdater.EnsureProtoInclude(
             csprojPath,
-            "Protos");
+            Path.Combine("Grpc","Protos"));
 
         return writeResult;
 

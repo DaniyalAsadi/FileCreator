@@ -11,7 +11,7 @@ using Google.Protobuf.WellKnownTypes;
 using {{ ns }};
 {{~ end ~}}
 
-namespace {{ grpc_namespace }}.{{ service_name }};
+namespace {{ grpc_namespace }};
 
 public sealed class {{ service_name }}GrpcClient
 {

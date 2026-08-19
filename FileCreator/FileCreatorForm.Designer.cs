@@ -265,7 +265,7 @@ partial class FileCreatorForm
     }
     private void SetDefaultValue()
     {
-        cmbProjectName.SelectedIndex = 2;
+        cmbProjectName.SelectedIndex = 0;
         txtUseCaseGroup.Text = "ErrorLog";
         txtUseCaseName.Text = "Create";
         txtRoute.Text = "error-logs";

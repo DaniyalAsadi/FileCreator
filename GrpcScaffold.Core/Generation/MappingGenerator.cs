@@ -9,12 +9,13 @@ using static MappingExpressionBuilder;
 /// </summary>
 public sealed class MappingGenerator(TemplateEngine templates)
 {
-    public string Generate(EndpointModel endpoint, string grpcNamespace)
+    public string Generate(EndpointModel endpoint, string mapperNameSpace, string protoNameSpace)
     {
         var model = new Dictionary<string, object?>
         {
             ["endpoint_class_name"] = endpoint.EndpointClassName,
-            ["grpc_namespace"] = grpcNamespace,
+            ["mapper_namespace"] = mapperNameSpace,
+            ["proto_namespace"] = protoNameSpace,
             ["mapping_class_name"] = NamingConventions.MappingClassName(endpoint.EndpointClassName),
             ["service_name"] = endpoint.ServiceName,
 
@@ -35,11 +36,11 @@ public sealed class MappingGenerator(TemplateEngine templates)
 
         model["grpc_request_type"] = endpoint.Request is null
             ? "Google.Protobuf.WellKnownTypes.Empty"
-            : $"{grpcNamespace}.{endpoint.ServiceName}.{endpoint.Request.Name}";
+            : $"{protoNameSpace}.{endpoint.Request.Name}";
 
         model["grpc_response_type"] = endpoint.Response is null
             ? "Google.Protobuf.WellKnownTypes.Empty"
-            : $"{grpcNamespace}.{endpoint.ServiceName}.{endpoint.Response.Name}";
+            : $"{protoNameSpace}.{endpoint.Response.Name}";
 
         return templates.Render("mapping.sbn", model);
     }

@@ -11,19 +11,19 @@ using Google.Protobuf.WellKnownTypes;
 using {{ ns }};
 {{~ end ~}}
 
-namespace {{ grpc_namespace }}.{{ service_name }};
+namespace {{ service_namespace }};
 
 public sealed class {{ service_name }}GrpcService(IMediator mediator)
-    : {{ service_name }}.{{ service_name }}Base
+    : {{ proto_namespace }}.{{ service_name }}.{{ service_name }}Base
 {
 {{~ for rpc in rpcs }}
 
-    public override async Task<{{ if rpc.response }}{{ grpc_namespace }}.{{ service_name }}.{{ rpc.response.Name }}{{ else }}Empty{{ end }}> {{ rpc.rpc_name }}(
-        {{ if rpc.request }}{{ rpc.request_type }}{{ else }}Empty{{ end }} request,
+    public override async Task<{{ if rpc.response }}{{ proto_namespace }}.{{ rpc.response_type }}{{ else }}Empty{{ end }}> {{ rpc.rpc_name }}(
+        {{ if rpc.request }}{{ proto_namespace }}.{{ rpc.request_type }}{{ else }}Empty{{ end }} request,
         ServerCallContext context)
     {
         var message =
-            {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToQuery(request);
+            {{ mapper_namespace }}.{{ rpc.mapping_class_name }}.MapToQuery(request);
 
         var result =
             await mediator.Send(message, context.CancellationToken);
@@ -32,7 +32,7 @@ public sealed class {{ service_name }}GrpcService(IMediator mediator)
             throw result.ToRpcException();
 
 {{ if rpc.response }}
-        return {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToResponse(result);
+        return {{ mapper_namespace }}.{{ rpc.mapping_class_name }}.MapToResponse(result);
 {{ else }}
         return new Empty();
 {{ end }}

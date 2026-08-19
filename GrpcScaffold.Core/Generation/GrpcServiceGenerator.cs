@@ -1,5 +1,6 @@
 ﻿// src/GrpcScaffold.Core/Generation/GrpcServiceGenerator.cs
 using GrpcScaffold.Core.Analysis.Models;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace GrpcScaffold.Core.Generation;
 
@@ -8,13 +9,17 @@ public sealed class GrpcServiceGenerator(TemplateEngine templates)
 {
     public string Generate(
         IReadOnlyList<EndpointModel> endpoints,
-        string grpcNamespace)
+        string serviceNameSpace,
+        string protoNameSpace,
+        string mapperNameSpace)
     {
         var first = endpoints[0];
 
         var model = new Dictionary<string, object?>
         {
-            ["grpc_namespace"] = grpcNamespace,
+            ["service_namespace"] = serviceNameSpace,
+            ["proto_namespace"] = protoNameSpace,
+            ["mapper_namespace"] = mapperNameSpace,
             ["service_name"] = first.ServiceName,
             ["usings"] = BuildUsings(endpoints),
             ["rpcs"] = endpoints

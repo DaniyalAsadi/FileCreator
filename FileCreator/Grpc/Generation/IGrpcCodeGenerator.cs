@@ -31,26 +31,28 @@ public sealed class GrpcCodeGenerator(
         string serviceName,
         IReadOnlyList<EndpointModel> endpoints)
     {
-        var protoRelative = Path.Combine("Grpc", "Protos", $"{serviceName}.proto");
-        var serviceRelative = Path.Combine("Grpc", "Services", $"{serviceName}GrpcService.cs");
         var baseWebNameSpace = $"{context.ProjectName}.Web";
         var baseBffNameSpace = "Presentation.Bff";
         return
         [
             new GeneratedFile(
                 context.Paths.WebBasePath,
-                protoRelative,
-                protoGenerator.Generate(endpoints, $"{baseWebNameSpace}.Grpc.Protos")),
+                Path.Combine("Grpc", "Protos", $"{serviceName}.proto"),
+                protoGenerator.Generate(endpoints, $"{baseWebNameSpace}.Grpc.Protos.{serviceName}")),
 
             new GeneratedFile(
-                context.Paths.WebBasePath, 
-                serviceRelative,
-                serviceGenerator.Generate(endpoints, $"{baseWebNameSpace}.Grpc.Services")),
+                context.Paths.WebBasePath,
+                Path.Combine("Grpc","Services",$"{serviceName}GrpcService.cs"),
+                Content: serviceGenerator.Generate(
+                    endpoints,
+                    serviceNameSpace: $"{baseWebNameSpace}.Grpc.Services",
+                    protoNameSpace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}",
+                    mapperNameSpace: $"{baseWebNameSpace}.Grpc.Mappings.The{serviceName}")),
 
             new GeneratedFile(
-                context.Paths.BffBasePath, 
-                serviceRelative,
-                clientGenerator.Generate(endpoints, $"{baseBffNameSpace}.Grpc.Services"))
+                context.Paths.BffBasePath,
+                Path.Combine("Grpc",$"The{serviceName}","Services",$"{serviceName}GrpcService.cs"),
+                clientGenerator.Generate(endpoints, $"{baseBffNameSpace}.Grpc.The{serviceName}.Services"))
         ];
     }
 
@@ -58,22 +60,23 @@ public sealed class GrpcCodeGenerator(
         EndpointModel endpoint,
         string serviceName)
     {
-        var relative = Path.Combine("Grpc", "Mappings", $"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs");
 
         var baseWebNameSpace = $"{context.ProjectName}.Web";
         var baseBffNameSpace = "Presentation.Bff";
         List<GeneratedFile> files =
         [
             new(
-                context.Paths.WebBasePath, 
-                relative,
-                mappingGenerator.Generate(endpoint, $"{baseWebNameSpace}.Grpc.Mappings.$The{serviceName}")),
+                context.Paths.WebBasePath,
+                Path.Combine("Grpc", "Mappings",$"The{serviceName}", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs"),
+                mappingGenerator.Generate(endpoint,
+                mapperNameSpace: $"{baseWebNameSpace}.Grpc.Mappings.The{serviceName}",
+                protoNameSpace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}")),
             new(
                 context.Paths.BffBasePath,
-                relative,
-                clientMappingGenerator.Generate(endpoint, $"{baseBffNameSpace}.Grpc.Mappings.$The{serviceName}"))
+                Path.Combine("Grpc", $"The{serviceName}", "Mappings", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs"),
+                clientMappingGenerator.Generate(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}"))
         ];
-        
+
         return files;
     }
 
@@ -81,22 +84,21 @@ public sealed class GrpcCodeGenerator(
         EndpointModel endpoint,
         string serviceName)
     {
-        var contractRelatives = Path.Combine("Grpc", "Contracts", $"The{serviceName}");
         var baseBffNameSpace = "Presentation.Bff";
         List<GeneratedFile> files = [];
         if (endpoint.Request is not null)
         {
             files.Add(new(
-                context.Paths.BffBasePath, 
-                Path.Combine( contractRelatives, $"{endpoint.Request.Name}.g.cs"),
-                contractGenerator.GenerateRequest(endpoint, serviceName, $"{baseBffNameSpace}.Grpc.Contracts.$The{serviceName}")));
+                context.Paths.BffBasePath,
+                Path.Combine("Grpc", $"The{serviceName}", "Contracts", $"{endpoint.Request.Name}.g.cs"),
+                contractGenerator.GenerateRequest(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts")));
         }
         if (endpoint.Response is not null)
         {
             files.Add(new(
                 context.Paths.BffBasePath,
-                Path.Combine(contractRelatives, $"{endpoint.Response.Name}.g.cs"),
-                contractGenerator.GenerateResponse(endpoint, serviceName, $"{baseBffNameSpace}.Grpc.Contracts.$The{serviceName}")));
+                Path.Combine("Grpc", $"The{serviceName}", "Contracts", $"{endpoint.Response.Name}.g.cs"),
+                contractGenerator.GenerateResponse(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts")));
         }
         return files;
     }
@@ -104,14 +106,13 @@ public sealed class GrpcCodeGenerator(
     public IReadOnlyList<GeneratedFile> GenerateDiRegistration(
         IEnumerable<string> serviceNames)
     {
-        var relative = Path.Combine("Grpc", "GrpcServiceRegistration.g.cs");
         var baseWebNameSpace = $"{context.ProjectName}.Web";
         //var baseBffNameSpace = "Presentation.Bff";
         return
         [
             new GeneratedFile(
-                context.Paths.WebBasePath, 
-                relative,
+                context.Paths.WebBasePath,
+                Path.Combine("Grpc", "GrpcServiceRegistration.g.cs"),
                 diGenerator.Generate(serviceNames, $"{baseWebNameSpace}.Grpc"))
         ];
     }

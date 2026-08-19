@@ -5,8 +5,8 @@
 // </auto-generated>
 syntax = "proto3";
 
-package {{ proto_package }}.{{ service_name }};
-option csharp_namespace = "{{ csharp_namespace }}.{{ service_name }}";
+package {{ proto_package }};
+option csharp_namespace = "{{ csharp_namespace }}";
 
 {{~ for proto_import in proto_imports ~}}
 import "{{ proto_import }}";

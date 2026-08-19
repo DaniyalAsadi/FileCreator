@@ -12,7 +12,6 @@ public sealed class ContractGenerator
 {
     public string GenerateRequest(
         EndpointModel endpoint,
-        string serviceName,
         string ns)
     {
         if (endpoint.Request is null)
@@ -20,13 +19,11 @@ public sealed class ContractGenerator
 
         return GenerateContract(
             endpoint.Request,
-            serviceName,
             ns);
     }
 
     public string GenerateResponse(
         EndpointModel endpoint,
-        string serviceName,
         string ns)
     {
         if (endpoint.Response is null)
@@ -34,13 +31,11 @@ public sealed class ContractGenerator
 
         return GenerateContract(
             endpoint.Response,
-            serviceName,
             ns);
     }
 
     private static string GenerateContract(
         ContractInfo contract,
-        string serviceName,
         string ns)
     {
         var type = contract.ClrType;
@@ -56,8 +51,6 @@ public sealed class ContractGenerator
 
         sb.Append("namespace ")
             .Append(ns)
-            .Append(".Grpc.Contracts.The")
-            .Append(serviceName)
             .AppendLine(";");
 
         sb.AppendLine();
