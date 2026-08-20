@@ -3,9 +3,10 @@ using FileCreator.Core.DependencyInjection;
 using FileCreator.Core.Generators;
 using FileCreator.Core.Templates.Factories;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO;
 using System.Text;
 
-namespace FileCreator.FileCreator;
+namespace FileCreator.FileCreatorService;
 
 public sealed class RoslynFileCreator(
     string projectName,

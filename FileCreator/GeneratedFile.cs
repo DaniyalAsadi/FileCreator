@@ -1,4 +1,6 @@
-﻿namespace FileCreator;
+﻿using System.IO;
+
+namespace FileCreator;
 
 public sealed record GeneratedFile(string BasePath , string RelativePath, string Content)
 {

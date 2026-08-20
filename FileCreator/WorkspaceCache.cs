@@ -1,4 +1,6 @@
-﻿namespace FileCreator;
+﻿using System.IO;
+
+namespace FileCreator;
 
 public interface IWorkspaceCache
 {

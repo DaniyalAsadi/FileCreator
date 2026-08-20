@@ -5,7 +5,7 @@ using System.Windows.Input;
 using FileCreator.Core;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
-using FileCreator.FileCreator;
+using FileCreator.FileCreatorService;
 using FileCreator.Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
