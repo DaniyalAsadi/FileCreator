@@ -52,7 +52,12 @@ public sealed class GrpcCodeGenerator(
             new GeneratedFile(
                 context.Paths.BffBasePath,
                 Path.Combine("Grpc",$"The{serviceName}","Services",$"{serviceName}GrpcService.cs"),
-                clientGenerator.Generate(endpoints, $"{baseBffNameSpace}.Grpc.The{serviceName}.Services"))
+                clientGenerator.Generate(
+                    endpoints,
+                    clientNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Services",
+                    protoNamespace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}",
+                    mappingNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Mappings",
+                    contractNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts"))
         ];
     }
 
@@ -74,7 +79,11 @@ public sealed class GrpcCodeGenerator(
             new(
                 context.Paths.BffBasePath,
                 Path.Combine("Grpc", $"The{serviceName}", "Mappings", $"{NamingConventions.MappingClassName(endpoint.EndpointClassName)}.cs"),
-                clientMappingGenerator.Generate(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}"))
+                clientMappingGenerator.Generate(
+                    endpoint,
+                    mappingNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Mappings",
+                    protoNamespace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}",
+                    contractNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts"))
         ];
 
         return files;
@@ -85,21 +94,25 @@ public sealed class GrpcCodeGenerator(
         string serviceName)
     {
         var baseBffNameSpace = "Presentation.Bff";
-        List<GeneratedFile> files = [];
-        if (endpoint.Request is not null)
+        var contractNamespace = $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts";
+        var files = new List<GeneratedFile>();
+
+        foreach (var generated in contractGenerator.GenerateContracts(endpoint.Request, contractNamespace))
         {
             files.Add(new(
                 context.Paths.BffBasePath,
-                Path.Combine("Grpc", $"The{serviceName}", "Contracts", $"{endpoint.Request.Name}.g.cs"),
-                contractGenerator.GenerateRequest(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts")));
+                Path.Combine("Grpc", $"The{serviceName}", "Contracts", generated.FileName),
+                generated.Content));
         }
-        if (endpoint.Response is not null)
+
+        foreach (var generated in contractGenerator.GenerateContracts(endpoint.Response, contractNamespace))
         {
             files.Add(new(
                 context.Paths.BffBasePath,
-                Path.Combine("Grpc", $"The{serviceName}", "Contracts", $"{endpoint.Response.Name}.g.cs"),
-                contractGenerator.GenerateResponse(endpoint, $"{baseBffNameSpace}.Grpc.The{serviceName}.Contracts")));
+                Path.Combine("Grpc", $"The{serviceName}", "Contracts", generated.FileName),
+                generated.Content));
         }
+
         return files;
     }
 
@@ -107,13 +120,25 @@ public sealed class GrpcCodeGenerator(
         IEnumerable<string> serviceNames)
     {
         var baseWebNameSpace = $"{context.ProjectName}.Web";
-        //var baseBffNameSpace = "Presentation.Bff";
+        var baseBffNameSpace = "Presentation.Bff";
+        var services = serviceNames.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList();
         return
         [
             new GeneratedFile(
                 context.Paths.WebBasePath,
                 Path.Combine("Grpc", "GrpcServiceRegistration.g.cs"),
-                diGenerator.Generate(serviceNames, $"{baseWebNameSpace}.Grpc"))
+                diGenerator.Generate(services, $"{baseWebNameSpace}.Grpc")),
+
+            new GeneratedFile(
+                context.Paths.BffBasePath,
+                Path.Combine("Grpc", "GrpcClientRegistration.g.cs"),
+                diGenerator.GenerateClient(
+                    services.Select(service => new GrpcClientRegistrationDescriptor(
+                        ServiceName: service,
+                        ProtoNamespace: $"{baseWebNameSpace}.Grpc.Protos.{service}",
+                        ClientNamespace: $"{baseBffNameSpace}.Grpc.The{service}.Services",
+                        ClientClassName: $"{service}GrpcClient")),
+                    $"{baseBffNameSpace}.Grpc"))
         ];
     }
 }

@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FileCreator.Core\FileCreator.Core.csproj" />
+    <ProjectReference Include="..\GrpcScaffold.Core\GrpcScaffold.Core.csproj" />
   </ItemGroup>
 
 

@@ -1,196 +1,158 @@
-    using GrpcScaffold.Core.Analysis.Models;
-    using GrpcScaffold.Core.Generation;
-    using Microsoft.CodeAnalysis;
-    using Newtonsoft.Json;
-    using static MappingExpressionBuilder;
+using GrpcScaffold.Core.Analysis.Models;
+using Microsoft.CodeAnalysis;
+using static GrpcScaffold.Core.Generation.MappingExpressionBuilder;
+
+namespace GrpcScaffold.Core.Generation;
 
 /// <summary>
-/// Client-side mapping: a CLR request object -> gRPC request message (what the client sends),
-/// and the gRPC response message -> a CLR response object (what the caller gets back).
-///
-/// This is the mirror image of <see cref="MappingGenerator"/>:
-///   server: grpc request  -> mediator message   |  client: clr request  -> grpc request
-///   server: result        -> grpc response       |  client: grpc response -> clr response
-///
-/// Unlike the server side there's no separate "mediator message" contract to bridge to —
-/// per ContractGenerator, Request/Response are themselves CLR records whose property names
-/// already match the gRPC field names 1:1, so each contract plays both roles for itself.
+/// Client-side mapping: BFF CLR contracts -> generated protobuf request messages, and
+/// generated protobuf response messages -> BFF CLR contracts.
 /// </summary>
 public sealed class ClientMappingGenerator(TemplateEngine templates)
 {
+    public string Generate(EndpointModel endpoint, string grpcNamespace)
+    {
+        return Generate(
+            endpoint,
+            mappingNamespace: $"{grpcNamespace}.Mappings",
+            protoNamespace: $"{grpcNamespace}.Contracts",
+            contractNamespace: $"{grpcNamespace}.Contracts");
+    }
+
     public string Generate(
         EndpointModel endpoint,
-        string grpcNamespace)
+        string mappingNamespace,
+        string protoNamespace,
+        string contractNamespace)
     {
+        ArgumentNullException.ThrowIfNull(endpoint);
+
+        var request = endpoint.Request is null ? null : CreateClientContract(endpoint.Request, contractNamespace);
+        var response = endpoint.Response is null ? null : CreateClientContract(endpoint.Response, contractNamespace);
+
         var model = new Dictionary<string, object?>
         {
             ["endpoint_class_name"] = endpoint.EndpointClassName,
-
-            ["grpc_namespace"] =
-                $"{grpcNamespace}.Mappings",
-
-            ["mapping_class_name"] =
-                NamingConventions.MappingClassName(
-                    endpoint.EndpointClassName),
-
-            ["service_name"] =
-                endpoint.ServiceName,
-
-            ["request"] =
-                endpoint.Request is null
-                    ? null
-                    : CreateContract(endpoint.Request),
-
-            ["response"] =
-                endpoint.Response is null
-                    ? null
-                    : CreateContract(endpoint.Response),
-
-            ["has_request"] =
-                endpoint.Request is not null,
-
-            ["has_response"] =
-                endpoint.Response is not null,
-
-            // CLR request -> gRPC request
-            ["request_mapping"] =
-                BuildOutboundRequestMapping(endpoint),
-
-            // gRPC response -> CLR response
-            ["response_mapping"] =
-                BuildInboundResponseMapping(endpoint),
-
-            ["usings"] =
-                BuildUsings(endpoint),
-
-            ["grpc_request_type"] =
-                endpoint.Request is null
-                    ? "Google.Protobuf.WellKnownTypes.Empty"
-                    : $"{grpcNamespace}.Contracts.{endpoint.Request.Name}",
-
-            ["grpc_response_type"] =
-                endpoint.Response is null
-                    ? "Google.Protobuf.WellKnownTypes.Empty"
-                    : $"{grpcNamespace}.Contracts.{endpoint.Response.Name}"
+            ["grpc_namespace"] = mappingNamespace,
+            ["mapping_class_name"] = NamingConventions.MappingClassName(endpoint.EndpointClassName),
+            ["service_name"] = endpoint.ServiceName,
+            ["request"] = request,
+            ["response"] = response,
+            ["has_request"] = endpoint.Request is not null,
+            ["has_response"] = endpoint.Response is not null,
+            ["request_mapping"] = BuildOutboundRequestMapping(endpoint, protoNamespace),
+            ["response_mapping"] = BuildInboundResponseMapping(endpoint, contractNamespace),
+            ["usings"] = BuildUsings(endpoint, contractNamespace),
+            ["grpc_request_type"] = endpoint.Request is null
+                ? "Google.Protobuf.WellKnownTypes.Empty"
+                : $"{protoNamespace}.{endpoint.Request.Name}",
+            ["grpc_response_type"] = endpoint.Response is null
+                ? "Google.Protobuf.WellKnownTypes.Empty"
+                : $"{protoNamespace}.{endpoint.Response.Name}"
         };
 
-        return templates.Render(
-            "client-mapping.sbn",
-            model);
+        return templates.Render("client-mapping.sbn", model);
     }
 
-    private static IReadOnlyList<string> BuildUsings(
-        EndpointModel endpoint)
+    private static Dictionary<string, object?> CreateClientContract(ContractInfo contract, string contractNamespace)
     {
-        var list = new List<string>();
+        var model = CreateContract(contract);
+        model["namespace"] = contractNamespace;
+        model["type_name"] = $"{contractNamespace}.{contract.Name}";
+        return model;
+    }
 
-        if (!string.IsNullOrWhiteSpace(endpoint.EndpointNamespace))
-        {
-            list.Add(endpoint.EndpointNamespace);
-        }
+    private static IReadOnlyList<string> BuildUsings(EndpointModel endpoint, string contractNamespace)
+    {
+        var list = new List<string> { contractNamespace };
 
-        if (endpoint.Request is not null &&
-            !string.IsNullOrWhiteSpace(endpoint.Request.Namespace))
-        {
+        // Scalar conversions use these namespaces in generated expressions.
+        list.Add("System");
+        list.Add("System.Collections.Generic");
+
+        if (endpoint.Request is not null && !string.IsNullOrWhiteSpace(endpoint.Request.Namespace))
             list.Add(endpoint.Request.Namespace);
-        }
 
-        if (endpoint.Response is not null &&
-            !string.IsNullOrWhiteSpace(endpoint.Response.Namespace))
-        {
+        if (endpoint.Response is not null && !string.IsNullOrWhiteSpace(endpoint.Response.Namespace))
             list.Add(endpoint.Response.Namespace);
-        }
 
         return list
+            .Where(static x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToList();
     }
 
-    private static IReadOnlyList<Dictionary<string, object?>>
-        BuildOutboundRequestMapping(
-            EndpointModel endpoint)
+    private static IReadOnlyList<Dictionary<string, object?>> BuildOutboundRequestMapping(
+        EndpointModel endpoint,
+        string protoNamespace)
     {
         if (endpoint.Request is null)
-        {
             return [];
-        }
 
         var lookup = FlattenByClrType(endpoint.Request);
 
-        return
-        [
-            .. endpoint.Request.Fields.Select(field =>
-            {
-                var expression =
-                    BuildClrToProtoExpression(
-                        field.Reference,
-                        $"request.{field.Name}",
-                        lookup);
+        return [.. endpoint.Request.Fields.Select(field =>
+        {
+            var expression = BuildClrToProtoExpression(
+                field.Reference,
+                $"request.{field.Name}",
+                lookup,
+                protoNamespace: protoNamespace);
 
-                return new Dictionary<string, object?>
-                {
-                    ["destination"] = field.Name,
-                    ["expression"] = expression,
-                    ["is_repeated"] = field.Reference.IsRepeated,
-                    ["needs_review"] =
-                        expression.Contains(
-                            "/* TODO",
-                            StringComparison.Ordinal)
-                };
-            })
-        ];
+            ThrowIfUnsupported(endpoint, field, expression, "client request");
+
+            return new Dictionary<string, object?>
+            {
+                ["destination"] = field.Name,
+                ["expression"] = expression,
+                ["is_repeated"] = field.Reference.IsRepeated,
+                ["needs_review"] = false
+            };
+        })];
     }
 
-    private static IReadOnlyList<Dictionary<string, object?>>
-        BuildInboundResponseMapping(
-            EndpointModel endpoint)
+    private static IReadOnlyList<Dictionary<string, object?>> BuildInboundResponseMapping(EndpointModel endpoint, string contractNamespace)
     {
         if (endpoint.Response is null)
-        {
             return [];
-        }
 
-        var ctor =
-            endpoint.Response.PreferredConstructor;
+        var lookup = FlattenByClrType(endpoint.Response);
 
-        if (ctor is null ||
-            ctor.Parameters.Count == 0)
+        return [.. endpoint.Response.Fields.Select(field =>
         {
-            return [];
-        }
+            var materializer = ProtoTypeConversion.CollectionMaterializer(field.DeclaredClrType ?? field.Reference.ClrType);
+            var expression = BuildProtoToClrExpression(
+                field.Reference,
+                $"response.{field.Name}",
+                lookup,
+                materializer,
+                clrNamespaceOverride: contractNamespace);
 
-        var responseFields =
-            endpoint.Response.Fields;
+            ThrowIfUnsupported(endpoint, field, expression, "client response");
 
-        var lookup =
-            FlattenByClrType(endpoint.Response);
-
-        var visiting =
-            new HashSet<ITypeSymbol>(
-                SymbolEqualityComparer.Default);
-
-        return ctor.Parameters
-            .Select(parameter =>
+            return new Dictionary<string, object?>
             {
-                var (expression, needsReview) =
-                    BuildConstructorArgumentExpression(
-                        parameter,
-                        "response",
-                        responseFields,
-                        lookup,
-                        lookup,
-                        visiting);
+                ["destination"] = field.Name,
+                ["expression"] = expression,
+                ["is_repeated"] = field.Reference.IsRepeated,
+                ["needs_review"] = false
+            };
+        })];
+    }
 
-                return new Dictionary<string, object?>
-                {
-                    ["destination"] = parameter.Name,
-                    ["expression"] = expression,
-                    ["is_optional"] = parameter.IsOptional,
-                    ["has_default"] = parameter.HasDefaultValue,
-                    ["needs_review"] = needsReview
-                };
-            })
-            .ToList();
+    private static void ThrowIfUnsupported(
+        EndpointModel endpoint,
+        ProtoFieldInfo field,
+        string expression,
+        string direction)
+    {
+        if (!expression.Contains("/* TODO", StringComparison.Ordinal))
+            return;
+
+        throw new InvalidOperationException(
+            $"Unable to generate {direction} mapping for endpoint '{endpoint.EndpointClassName}': " +
+            $"property '{field.Name}' of CLR type '{field.Reference.ClrType.ToDisplayString()}' " +
+            $"cannot be mapped to protobuf field '{field.Reference.ProtoTypeName}'. Generated expression: {expression}");
     }
 }

@@ -25,7 +25,10 @@ public static class ProtoTypeMapper
                 ProtoName: ToSnakeCase(property.Name),
                 Reference: Map(property.Type),
                 IsNullable: property.NullableAnnotation is NullableAnnotation.Annotated,
-                FieldNumber: fieldNumber++));
+                FieldNumber: fieldNumber++)
+            {
+                DeclaredClrType = property.Type
+            });
         }
 
         return fields;

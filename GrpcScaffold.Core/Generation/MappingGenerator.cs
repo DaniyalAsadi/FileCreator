@@ -1,7 +1,8 @@
 using GrpcScaffold.Core.Analysis.Models;
-using GrpcScaffold.Core.Generation;
 using Microsoft.CodeAnalysis;
-using static MappingExpressionBuilder;
+using static GrpcScaffold.Core.Generation.MappingExpressionBuilder;
+
+namespace GrpcScaffold.Core.Generation;
 
 /// <summary>
 /// Server-side mapping: gRPC request -> mediator message (handler input), and the handler's
@@ -29,7 +30,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
             // grpc request -> mediator message constructor
             ["query_mapping"] = BuildRequestMappings(endpoint),
             // result -> grpc response
-            ["response_mapping"] = BuildResponseMappings(endpoint),
+            ["response_mapping"] = BuildResponseMappings(endpoint, protoNameSpace),
 
             ["usings"] = BuildUsings(endpoint)
         };
@@ -105,7 +106,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
     // result.<ClrField> -> new GrpcResponse { ... }
     // ---------------------------------------------------------------------
 
-    private static IReadOnlyList<Dictionary<string, object?>> BuildResponseMappings(EndpointModel endpoint)
+    private static IReadOnlyList<Dictionary<string, object?>> BuildResponseMappings(EndpointModel endpoint, string protoNamespace)
     {
         if (endpoint.Response is null)
             return [];
@@ -115,7 +116,7 @@ public sealed class MappingGenerator(TemplateEngine templates)
         return [.. endpoint.Response.Fields
             .Select(field =>
             {
-                var expression = BuildClrToProtoExpression(field.Reference, $"result.{field.Name}", lookup);
+                var expression = BuildClrToProtoExpression(field.Reference, $"result.{field.Name}", lookup, protoNamespace: protoNamespace);
                 return new Dictionary<string, object?>
                 {
                     ["destination"] = field.Name,

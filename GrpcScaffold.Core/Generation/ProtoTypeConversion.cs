@@ -1,7 +1,6 @@
 ﻿// src/GrpcScaffold.Core/Generation/ProtoTypeConversion.cs
 using GrpcScaffold.Core.Analysis.Models;
 using Microsoft.CodeAnalysis;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace GrpcScaffold.Core.Generation;
 
@@ -120,7 +119,7 @@ internal static class ProtoTypeConversion
     /// equivalent. Does not handle repeated or message types — see
     /// <see cref="MappingGenerator"/> for how those wrap this.
     /// </summary>
-    public static string ProtoScalarToClr(ProtoTypeReference reference, string source)
+    public static string ProtoScalarToClr(ProtoTypeReference reference, string source, string? clrNamespaceOverride = null)
     {
         if (reference.IsRepeated || reference.IsMessage)
         {
@@ -132,7 +131,7 @@ internal static class ProtoTypeConversion
         }
 
         var clr = UnwrapNullable(reference.ClrType);
-        var clrDisplay = clr.ToDisplayString();
+        var clrDisplay = QualifyClrType(clr, clrNamespaceOverride);
         var isNullableStruct = reference.IsNullable && clr.IsValueType;
         var kind = Classify(clr);
 
@@ -172,7 +171,7 @@ internal static class ProtoTypeConversion
     /// Converts a single CLR scalar value (<paramref name="source"/>) into its proto/gRPC
     /// equivalent. Does not handle repeated or message types.
     /// </summary>
-    public static string ClrScalarToProto(ProtoTypeReference reference, string source)
+    public static string ClrScalarToProto(ProtoTypeReference reference, string source, string? protoNamespace = null)
     {
         if (reference.IsRepeated || reference.IsMessage)
         {
@@ -188,7 +187,7 @@ internal static class ProtoTypeConversion
 
         if (reference.IsEnum)
         {
-            var expr = $"({reference.ProtoTypeName}){accessor}";
+            var expr = $"({QualifyProtoType(reference.ProtoTypeName, protoNamespace)}){accessor}";
             return isNullableStruct ? $"{source} is null ? default : {expr}" : expr;
         }
 
@@ -267,6 +266,30 @@ internal static class ProtoTypeConversion
         }
 
         return ".ToList()";
+    }
+
+    private static string QualifyClrType(ITypeSymbol clrType, string? clrNamespaceOverride)
+    {
+        if (!string.IsNullOrWhiteSpace(clrNamespaceOverride) &&
+            clrType.ContainingNamespace?.ToDisplayString() != "System" &&
+            (clrType.TypeKind is TypeKind.Enum or TypeKind.Class ||
+             clrType.TypeKind == TypeKind.Struct && clrType.SpecialType == SpecialType.None))
+        {
+            return $"global::{clrNamespaceOverride}.{clrType.Name}";
+        }
+
+        return clrType.ToDisplayString();
+    }
+
+    private static string QualifyProtoType(string protoTypeName, string? protoNamespace)
+    {
+        if (string.IsNullOrWhiteSpace(protoNamespace) ||
+            protoTypeName.Contains('.', StringComparison.Ordinal))
+        {
+            return protoTypeName;
+        }
+
+        return $"global::{protoNamespace}.{protoTypeName}";
     }
 
     private static bool IsDictionaryType(INamedTypeSymbol type)

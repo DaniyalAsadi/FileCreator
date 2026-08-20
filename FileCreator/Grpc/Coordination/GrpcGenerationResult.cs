@@ -56,7 +56,23 @@ public sealed class GrpcGenerationCoordinator(
         var writeResult = writer.Write(result.Files, result.Options);
         csprojUpdater.EnsureProtoInclude(
             csprojPath,
-            Path.Combine("Grpc","Protos"));
+            Path.Combine("Grpc", "Protos"));
+
+        var bffCsprojPath = Directory.Exists(context.Paths.BffBasePath)
+            ? Directory.GetFiles(context.Paths.BffBasePath, "*.csproj").FirstOrDefault()
+            : null;
+
+        if (!string.IsNullOrWhiteSpace(bffCsprojPath))
+        {
+            var relativeProtoPath = Path.GetRelativePath(
+                context.Paths.BffBasePath,
+                Path.Combine(context.Paths.WebBasePath, "Grpc", "Protos"));
+
+            csprojUpdater.EnsureProtoInclude(
+                bffCsprojPath,
+                relativeProtoPath,
+                grpcServices: "Client");
+        }
 
         return writeResult;
 

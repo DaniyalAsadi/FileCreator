@@ -1,8 +1,8 @@
 using GrpcScaffold.Core.Analysis.Models;
-using GrpcScaffold.Core.Generation;
 using Microsoft.CodeAnalysis;
 using System.Xml.Linq;
 
+namespace GrpcScaffold.Core.Generation;
 
 /// <summary>
 /// Shared building blocks for both <see cref="MappingGenerator"/> (server: gRPC ⇄ mediator)
@@ -165,7 +165,8 @@ internal static class MappingExpressionBuilder
         string source,
         IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
         string collectionMaterializer = ".ToList()",
-        ISet<ITypeSymbol>? visiting = null)
+        ISet<ITypeSymbol>? visiting = null,
+        string? clrNamespaceOverride = null)
     {
         visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -175,7 +176,7 @@ internal static class MappingExpressionBuilder
 
             const string x = "x";
 
-            var elementExpr = BuildProtoToClrExpression(element, x, lookup, visiting: visiting);
+            var elementExpr = BuildProtoToClrExpression(element, x, lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride);
 
             var projected = elementExpr == x
                 ? source
@@ -207,26 +208,34 @@ internal static class MappingExpressionBuilder
 
             try
             {
-                if (lookup.TryGetValue(reference.ClrType, out var nested) &&
-                    nested.PreferredConstructor is not null)
+                if (lookup.TryGetValue(reference.ClrType, out var nested))
                 {
-                    var args = nested.PreferredConstructor.Parameters.Select(p =>
+                    if (nested.PreferredConstructor is { Parameters.Count: > 0 } ctor)
                     {
-                        var nestedSourceName = p.SourceFieldName ?? p.Name;
+                        var args = ctor.Parameters.Select(p =>
+                        {
+                            var nestedSourceName = p.SourceFieldName ?? p.Name;
 
-                        var nestedField = nested.Fields.FirstOrDefault(f =>
-                            string.Equals(f.Name, nestedSourceName, StringComparison.OrdinalIgnoreCase));
+                            var nestedField = nested.Fields.FirstOrDefault(f =>
+                                string.Equals(f.Name, nestedSourceName, StringComparison.OrdinalIgnoreCase));
 
-                        return nestedField is null
-                            ? $"default({p.TypeName}) /* TODO: could not resolve '{p.Name}' on {nested.Name} */"
-                            : BuildProtoToClrExpression(
-                                nestedField.Reference,
-                                $"{source}.{nestedField.Name}",
-                                lookup,
-                                visiting: visiting);
-                    });
+                            return nestedField is null
+                                ? $"default({p.TypeName}) /* TODO: could not resolve '{p.Name}' on {nested.Name} */"
+                                : BuildProtoToClrExpression(
+                                    nestedField.Reference,
+                                    $"{source}.{nestedField.Name}",
+                                    lookup,
+                                    visiting: visiting,
+                                    clrNamespaceOverride: clrNamespaceOverride);
+                        });
 
-                    return $"new {nested.ClrType.ToDisplayString()}({string.Join(", ", args)})";
+                        return $"new {QualifyClrType(nested, clrNamespaceOverride)}({string.Join(", ", args)})";
+                    }
+
+                    var assignments = nested.Fields.Select(f =>
+                        $"{f.Name} = {BuildProtoToClrExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride)}");
+
+                    return $"new {QualifyClrType(nested, clrNamespaceOverride)} {{ {string.Join(", ", assignments)} }}";
                 }
 
                 return $"{source} /* TODO: map nested message '{reference.ClrType.Name}' manually */";
@@ -237,7 +246,7 @@ internal static class MappingExpressionBuilder
             }
         }
 
-        return ProtoTypeConversion.ProtoScalarToClr(reference, source);
+        return ProtoTypeConversion.ProtoScalarToClr(reference, source, clrNamespaceOverride);
     }
 
     /// <summary>
@@ -254,7 +263,8 @@ internal static class MappingExpressionBuilder
         ProtoTypeReference reference,
         string source,
         IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
-        ISet<ITypeSymbol>? visiting = null)
+        ISet<ITypeSymbol>? visiting = null,
+        string? protoNamespace = null)
     {
         visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -264,7 +274,7 @@ internal static class MappingExpressionBuilder
 
             const string x = "x";
 
-            var elementExpr = BuildClrToProtoExpression(element, x, lookup, visiting);
+            var elementExpr = BuildClrToProtoExpression(element, x, lookup, visiting, protoNamespace);
 
             return elementExpr == x
                 ? source
@@ -293,9 +303,9 @@ internal static class MappingExpressionBuilder
                 if (lookup.TryGetValue(reference.ClrType, out var nested))
                 {
                     var assignments = nested.Fields.Select(f =>
-                        $"{f.Name} = {BuildClrToProtoExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting)}");
+                        $"{f.Name} = {BuildClrToProtoExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting, protoNamespace)}");
 
-                    return $"new {reference.ProtoTypeName} {{ {string.Join(", ", assignments)} }}";
+                    return $"new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ {string.Join(", ", assignments)} }}";
                 }
 
                 return $"{source} /* TODO: map nested message '{reference.ClrType.Name}' manually */";
@@ -306,7 +316,25 @@ internal static class MappingExpressionBuilder
             }
         }
 
-        return ProtoTypeConversion.ClrScalarToProto(reference, source);
+        return ProtoTypeConversion.ClrScalarToProto(reference, source, protoNamespace);
+    }
+
+    private static string QualifyClrType(ContractInfo contract, string? clrNamespaceOverride)
+    {
+        return string.IsNullOrWhiteSpace(clrNamespaceOverride)
+            ? contract.ClrType.ToDisplayString()
+            : $"global::{clrNamespaceOverride}.{contract.Name}";
+    }
+
+    private static string QualifyProtoType(string protoTypeName, string? protoNamespace)
+    {
+        if (string.IsNullOrWhiteSpace(protoNamespace) ||
+            protoTypeName.Contains('.', StringComparison.Ordinal))
+        {
+            return protoTypeName;
+        }
+
+        return $"global::{protoNamespace}.{protoTypeName}";
     }
 
     // ---------------------------------------------------------------------

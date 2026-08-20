@@ -9,7 +9,12 @@ public sealed record ProtoFieldInfo(
     string ProtoName,
     ProtoTypeReference Reference,
     bool IsNullable,
-    int FieldNumber);
+    int FieldNumber)
+{
+    [JsonIgnore]
+    public ITypeSymbol? DeclaredClrType { get; init; }
+}
+
 
 
 public sealed record ProtoTypeReference
