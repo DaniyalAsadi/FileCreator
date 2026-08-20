@@ -33,7 +33,7 @@ public sealed class {{ service_name }}GrpcClient
         {
 {{ if rpc.request }}
             var grpcRequest =
-                {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToProto(request);
+                {{ grpc_namespace }}.Mappings.{{ rpc.mapping_class_name }}.MapToGrpc(request);
 {{ else }}
             var grpcRequest = new Empty();
 {{ end }}
@@ -45,7 +45,8 @@ public sealed class {{ service_name }}GrpcClient
                     cancellationToken: cancellationToken);
 
             var response =
-                {{ grpc_namespace }}.{{ service_name }}.Mappings.The{{ service_name }}.{{ rpc.mapping_class_name }}.MapToResponse(grpcResponse);
+                {{ grpc_namespace }}.Mappings.{{ rpc.mapping_class_name }}.MapToResponse(
+                    grpcResponse);
 
             return Result.Success(response);
 {{ else }}

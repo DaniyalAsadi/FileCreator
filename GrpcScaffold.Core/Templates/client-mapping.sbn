@@ -9,35 +9,79 @@ using {{ ns }};
 {{~ end ~}}
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+
 using GrpcRequest = {{ grpc_request_type }};
 using GrpcResponse = {{ grpc_response_type }};
 
 namespace {{ grpc_namespace }};
 
 /// <summary>
-/// Maps between <see cref="GrpcRequest"/> / <see cref="GrpcResponse"/> and
-/// <see cref="{{ request.type_name }}"/> for <c>{{ endpoint_class_name }}</c>.
+/// Maps between gRPC messages and CLR contracts
+/// for <c>{{ endpoint_class_name }}</c>.
 /// </summary>
 public static class {{ mapping_class_name }}
 {
-    public static {{ grpc_request_type }} MapToGrpc(
+{{~ if has_request ~}}
+
+    /// <summary>
+    /// Maps the CLR request contract to the generated gRPC request.
+    /// </summary>
+    public static GrpcRequest MapToGrpc(
         {{ request.type_name }} request)
     {
-        var result = new {{ grpc_request_type }}
+        var result = new GrpcRequest
         {
-            {{~ for mapping in request_mapping ~}}
-            {{~ if !mapping.is_repeated ~}}
+{{~ for mapping in request_mapping ~}}
+{{~ if !mapping.is_repeated ~}}
             {{ mapping.destination }} = {{ mapping.expression }}{{ if !for.last }},{{ end }}
-            {{~ end ~}}
-            {{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
         };
-
-        {{~ for mapping in request_mapping ~}}
-        {{~ if mapping.is_repeated ~}}
-        result.{{ mapping.destination }}.AddRange({{ mapping.expression }});
-        {{~ end ~}}
-        {{~ end ~}}
-
+{{~ for mapping in request_mapping ~}}
+{{~ if mapping.is_repeated ~}}
+        result.{{ mapping.destination }}.AddRange(
+            {{ mapping.expression }});
+{{~ end ~}}
+{{~ end ~}}
         return result;
     }
+{{~ else ~}}
+
+    /// <summary>
+    /// Creates an empty gRPC request.
+    /// </summary>
+    public static GrpcRequest MapToGrpc()
+    {
+        return new GrpcRequest();
+    }
+{{~ end ~}}
+{{~ if has_response ~}}
+    /// <summary>
+    /// Maps the generated gRPC response to the CLR response contract.
+    /// </summary>
+    public static {{ response.type_name }} MapToResponse(
+        GrpcResponse response)
+    {
+{{~ if response_mapping.size == 0 ~}}
+        return new {{ response.type_name }}();
+{{~ else ~}}
+        return new {{ response.type_name }}
+        (
+{{~ for mapping in response_mapping ~}}
+            {{ mapping.expression }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+        );
+
+{{~ end ~}}
+    }
+
+{{~ else ~}}
+    /// <summary>
+    /// Maps an empty gRPC response to no CLR response.
+    /// </summary>
+    public static void MapToResponse(
+        GrpcResponse response)
+    {
+    }
+{{~ end ~}}
 }
