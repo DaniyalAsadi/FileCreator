@@ -1,18 +1,15 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
+using System.IO;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
+using System.Windows;
+using Microsoft.Win32;
+using Newtonsoft.Json;
 
 namespace FileCreator;
 
-public partial class SettingsForm : Form
+public partial class SettingsForm : Window
 {
     private readonly GenerationContext _context;
+
     public SettingsForm(GenerationContext context)
     {
         _context = context;
@@ -20,27 +17,28 @@ public partial class SettingsForm : Form
         txtSolutionPath.Text = Properties.Settings.Default.SolutionPath;
     }
 
-    private void BtnBrowse_Click(object sender, EventArgs e)
+    private void BtnBrowse_Click(object sender, RoutedEventArgs e)
     {
-        using var ofd = new OpenFileDialog();
-        ofd.Filter = "Solution Files (*.sln)|*.sln";
-        if (ofd.ShowDialog() == DialogResult.OK)
+        var ofd = new OpenFileDialog
+        {
+            Filter = "Solution Files (*.sln)|*.sln"
+        };
+        if (ofd.ShowDialog() == true)
         {
             txtSolutionPath.Text = ofd.FileName;
         }
     }
 
-    private void BtnSave_Click(object sender, EventArgs e)
+    private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
         string slnPath = txtSolutionPath.Text.Trim();
 
         if (string.IsNullOrWhiteSpace(slnPath) || !File.Exists(slnPath))
         {
             MessageBox.Show("Please select a valid Solution (.sln) file.",
-                            "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-
 
         try
         {
@@ -55,15 +53,15 @@ public partial class SettingsForm : Form
             Properties.Settings.Default.SolutionPath = slnPath;
             Properties.Settings.Default.ProjectPathes = projectLines;
             Properties.Settings.Default.Save();
-            var result = MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            DialogResult = DialogResult.OK;
+            MessageBox.Show("Settings saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            DialogResult = true;
             Close();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
+            MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+
         static Dictionary<string, string> ExtractProjects(string[] lines, string solutionFolder)
         {
             Dictionary<string, string> properties = new Dictionary<string, string>();
@@ -84,7 +82,6 @@ public partial class SettingsForm : Form
             }
             return properties;
         }
-
     }
 
     // کمکی برای پاک کردن مقادیر Settings
@@ -94,6 +91,4 @@ public partial class SettingsForm : Form
         Properties.Settings.Default.ProjectPathes = string.Empty;
         Properties.Settings.Default.Save();
     }
-
-
 }

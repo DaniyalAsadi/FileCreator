@@ -1,0 +1,90 @@
+<Window x:Class="FileCreator.GrpcGenerationForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="gRPC Scaffold Generator"
+        Width="560" Height="640"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        Foreground="Gainsboro"
+        FontFamily="Segoe UI">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Group name selector -->
+        <ComboBox x:Name="cmbGroupName" Grid.Row="0" Height="26"
+                  SelectionChanged="CmbGroupName_SelectionChanged" />
+
+        <!-- Endpoint filter -->
+        <TextBox x:Name="txtEndpointFilter" Grid.Row="2" Height="26"
+                 VerticalContentAlignment="Center"
+                 Tag="Endpoint Filter (*User*)"
+                 TextChanged="TxtEndpointFilter_TextChanged" />
+
+        <!-- Option checkboxes -->
+        <Grid Grid.Row="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="6" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <CheckBox x:Name="chkGenerateAll" Grid.Row="0" Grid.Column="0" Content="Generate All" />
+            <CheckBox x:Name="chkInternalOnly" Grid.Row="0" Grid.Column="2" Content="Internal Only" />
+
+            <CheckBox x:Name="chkDryRun" Grid.Row="2" Grid.Column="0" Content="Dry Run" />
+            <CheckBox x:Name="chkForce" Grid.Row="2" Grid.Column="2" Content="Force" />
+            <CheckBox x:Name="chkStrict" Grid.Row="2" Grid.Column="4" Content="Strict" />
+        </Grid>
+
+        <!-- Endpoints grid -->
+        <DataGrid x:Name="dgvEndpoints" Grid.Row="6"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  Background="#252526"
+                  Foreground="Gainsboro"
+                  RowBackground="#2D2D30"
+                  AlternatingRowBackground="#252526"
+                  BorderBrush="#3F3F46">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40">
+                    <DataGridCheckBoxColumn.Header>
+                        <CheckBox x:Name="chkSelectAll" Checked="ChkSelectAll_Changed" Unchecked="ChkSelectAll_Changed" />
+                    </DataGridCheckBoxColumn.Header>
+                </DataGridCheckBoxColumn>
+                <DataGridTextColumn Header="Group" Binding="{Binding GroupName}" Width="150" IsReadOnly="True" />
+                <DataGridTextColumn Header="Endpoint" Binding="{Binding Name}" Width="150" IsReadOnly="True" />
+                <DataGridTextColumn Header="Verb" Binding="{Binding HttpVerb}" Width="70" IsReadOnly="True" />
+                <DataGridTextColumn Header="Route" Binding="{Binding Route}" Width="*" IsReadOnly="True" />
+                <DataGridTextColumn Header="Response" Binding="{Binding ResponseType}" Width="120" IsReadOnly="True" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Generate button -->
+        <Button x:Name="btnGenerateGrpc" Grid.Row="8" Height="40"
+                Content="Generate gRPC"
+                Background="#007ACC" Foreground="White" BorderThickness="0"
+                Click="BtnGenerateGrpc_Click" />
+    </Grid>
+</Window>
