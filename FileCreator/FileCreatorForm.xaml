@@ -99,7 +99,7 @@
             <!-- Row 3: Generate button -->
             <Button x:Name="btnGenerate" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
                     Height="32" Content="Generate UseCase + Endpoint Files"
-                    IsEnabled="False"
+                    IsEnabled="True"
                     Background="#007ACC" Foreground="White" BorderThickness="0"
                     IsEnabledChanged="BtnGenerate_IsEnabledChanged"
                     Click="BtnGenerate_Click" />
