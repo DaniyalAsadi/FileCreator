@@ -1,14 +1,14 @@
-﻿using FileCreator.Grpc.Coordination;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using FileCreator.Grpc.Coordination;
 using FileCreator.Grpc.Discovery;
 using FileCreator.Grpc.ViewModels;
-using FileCreator.Services;
 using GrpcScaffold.Core.IO;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Data;
 
 namespace FileCreator;
 
-public partial class GrpcGenerationForm : Form
+public partial class GrpcGenerationForm : Window
 {
     private const string EmptyCmbText = "----";
     private readonly GrpcGenerationCoordinator _coordinator;
@@ -23,7 +23,6 @@ public partial class GrpcGenerationForm : Form
 
     private List<string> _allGroups = [];
 
-
     public GrpcGenerationForm(
         GrpcGenerationCoordinator coordinator,
         GenerationContext context,
@@ -35,14 +34,12 @@ public partial class GrpcGenerationForm : Form
         _endpointDiscovery = endpointDiscovery;
         _context = context;
         InitializeComponent();
-        ConfigureEndpointGrid();
+
+        Loaded += OnLoaded;
     }
 
-
-    protected override async void OnLoad(EventArgs e)
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        base.OnLoad(e);
-
         if (_context.Paths is null || string.IsNullOrWhiteSpace(_context.ProjectName))
         {
             MessageBox.Show("لطفاً ابتدا تنظیمات پروژه را در فرم اصلی بارگذاری کنید.");
@@ -51,131 +48,96 @@ public partial class GrpcGenerationForm : Form
         }
         await LoadEndpointsAsync();
     }
-    private void SetEndpoints(
-    IReadOnlyList<EndpointSelectionItem> endpoints)
+
+    private void SetEndpoints(IReadOnlyList<EndpointSelectionItem> endpoints)
     {
         _allEndpoints = [.. endpoints];
 
         ApplyEndpointFilter();
     }
 
-
-
     private async Task LoadEndpointsAsync()
     {
         try
         {
-            UseWaitCursor = true;
+            Mouse.OverrideCursor = Cursors.Wait;
 
             var options = BuildOptionsFromForm();
             var workspace = _workspaceCache.GetWorkspace();
 
-
             var endpoints =
                 await _endpointDiscovery.DiscoverAsync(options);
 
-
-
             SetEndpoints([.. endpoints
                 .Select(EndpointSelectionItem.Map)]);
-       
+
             _allGroups = [EmptyCmbText];
 
             _allGroups.AddRange(endpoints.GroupBy(e => e.EndpointGroupName).Select(e => e.Key));
 
-            cmbGroupName.DataSource = _allGroups.ToList();
+            cmbGroupName.ItemsSource = _allGroups.ToList();
+            cmbGroupName.SelectedIndex = 0;
         }
         catch (Exception ex)
         {
             MessageBox.Show(
                 ex.Message,
                 "Endpoint Discovery Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
-            UseWaitCursor = false;
+            Mouse.OverrideCursor = null;
         }
     }
 
-
-
-    private async void BtnGenerateGrpc_Click(
-        object sender,
-        EventArgs e)
+    private async void BtnGenerateGrpc_Click(object sender, RoutedEventArgs e)
     {
-
-        dgvEndpoints.EndEdit();
-
+        dgvEndpoints.CommitEdit(DataGridEditingUnit.Row, true);
 
         var options = BuildOptionsFromForm();
 
-
         if (options.SelectedEndpoints.Count == 0)
         {
-            MessageBox.Show(
-                "Please select at least one endpoint.");
-
+            MessageBox.Show("Please select at least one endpoint.");
             return;
         }
 
-
         GrpcGenerationResult result;
-
 
         try
         {
-            btnGenerateGrpc.Enabled = false;
-
+            btnGenerateGrpc.IsEnabled = false;
 
             result = await _coordinator.PrepareAsync(options);
-
         }
         catch (InvalidOperationException ex)
         {
             MessageBox.Show(
                 ex.Message,
                 "gRPC Scaffold",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
             return;
         }
         finally
         {
-            btnGenerateGrpc.Enabled = true;
+            btnGenerateGrpc.IsEnabled = true;
         }
 
+        var workspace = _workspaceCache.GetWorkspace();
 
+        var preview = new PreviewForm(workspace, result.Files) { Owner = this };
 
-        var workspace =
-            _workspaceCache.GetWorkspace();
-
-
-
-        using var preview =
-            new PreviewForm(
-                workspace,
-                result.Files);
-
-
-
-        if (preview.ShowDialog(this)
-            != DialogResult.OK)
+        if (preview.ShowDialog() != true)
             return;
 
-
-
-        var writeResults =
-            _coordinator.Commit(result);
-
-
+        var writeResults = _coordinator.Commit(result);
 
         ShowWriteSummary(writeResults);
     }
-
-
 
     private GrpcGenerationOptions BuildOptionsFromForm()
     {
@@ -186,28 +148,22 @@ public partial class GrpcGenerationForm : Form
             SolutionPath = _context.SolutionPath,
 
             GenerateAll =
-                chkGenerateAll.Checked,
-
+                chkGenerateAll.IsChecked == true,
 
             EndpointFilter =
                 $"*{txtEndpointFilter.Text.Trim()}*",
 
-
             InternalOnly =
-                chkInternalOnly.Checked,
-
+                chkInternalOnly.IsChecked == true,
 
             DryRun =
-                chkDryRun.Checked,
-
+                chkDryRun.IsChecked == true,
 
             Force =
-                chkForce.Checked,
-
+                chkForce.IsChecked == true,
 
             Strict =
-                chkStrict.Checked,
-
+                chkStrict.IsChecked == true,
 
             SelectedEndpoints =
                 [.. _allEndpoints
@@ -216,10 +172,7 @@ public partial class GrpcGenerationForm : Form
         };
     }
 
-
-
-    private static void ShowWriteSummary(
-        IReadOnlyList<WriteResult> results)
+    private static void ShowWriteSummary(IReadOnlyList<WriteResult> results)
     {
         var summary =
             string.Join(
@@ -231,38 +184,63 @@ public partial class GrpcGenerationForm : Form
                             ? "skipped"
                             : "written")}] {r.RelativePath}"));
 
-
         MessageBox.Show(
             "عملیات با موفقیت انجام شد",
             "نتیجه تولید فایل‌های gRPC",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
-    private void TxtEndpointFilter_TextChanged(
-    object? sender,
-    EventArgs e)
+
+    private void TxtEndpointFilter_TextChanged(object sender, TextChangedEventArgs e)
     {
         ApplyEndpointFilter();
     }
 
-    private void cmbGroupName_SelectedIndexChanged(object sender, EventArgs e)
+    private void CmbGroupName_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         ApplyEndpointFilter();
     }
+
     private void ApplyEndpointFilter()
     {
+        if (dgvEndpoints is null)
+            return;
+
         var filter = txtEndpointFilter.Text.Trim();
 
-        var groupSearch = cmbGroupName.Text.Trim() == EmptyCmbText ? string.Empty : cmbGroupName.Text.Trim();
+        var selectedGroup = cmbGroupName.SelectedItem?.ToString() ?? string.Empty;
+        var groupSearch = selectedGroup == EmptyCmbText ? string.Empty : selectedGroup.Trim();
 
         var filtered = _allEndpoints.ToList();
-        if(!string.IsNullOrEmpty(groupSearch))
+        if (!string.IsNullOrEmpty(groupSearch))
         {
             filtered = [.. filtered.Where(x => x.GroupName == groupSearch)];
         }
         if (!string.IsNullOrEmpty(filter))
             filtered = [.. filtered.Where(x => EndpointFilter.GlobMatch($"*{filter}*", x.Name))];
-        dgvEndpoints.DataSource = null;
-        dgvEndpoints.DataSource = filtered;
+
+        dgvEndpoints.ItemsSource = null;
+        dgvEndpoints.ItemsSource = filtered;
+    }
+
+    private void ChkSelectAll_Changed(object sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox checkBox)
+            return;
+
+        SelectAllEndpoints(checkBox.IsChecked == true);
+    }
+
+    private void SelectAllEndpoints(bool selected)
+    {
+        if (dgvEndpoints.ItemsSource is not IEnumerable<EndpointSelectionItem> endpoints)
+            return;
+
+        foreach (var endpoint in endpoints)
+        {
+            endpoint.Selected = selected;
+        }
+
+        dgvEndpoints.Items.Refresh();
     }
 }

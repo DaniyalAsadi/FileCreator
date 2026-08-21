@@ -1,19 +1,21 @@
+using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using FileCreator.Core;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
-using FileCreator.FileCreator;
+using FileCreator.FileCreatorService;
 using FileCreator.Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
 namespace FileCreator;
 
-public partial class FileCreatorForm : Form
+public partial class FileCreatorForm : Window
 {
-
     private string _slnPath = string.Empty;
     private string _projectName = string.Empty;
     private string _solutionName = string.Empty;
@@ -23,13 +25,11 @@ public partial class FileCreatorForm : Form
     private readonly IProjectPathsProvider _pathsProvider; // جدید
     private readonly GenerationContext _context;
 
-
     public FileCreatorForm(
-    IServiceProvider serviceProvider,
-    IProjectPathsProvider pathsProvider,
-    IWorkspaceCache cache,
-
-    GenerationContext context)
+        IServiceProvider serviceProvider,
+        IProjectPathsProvider pathsProvider,
+        IWorkspaceCache cache,
+        GenerationContext context)
     {
         _serviceProvider = serviceProvider;
         _cache = cache;
@@ -38,16 +38,17 @@ public partial class FileCreatorForm : Form
 
         InitializeComponent();
 
-        LoadSettings(cmbProjectName.Text);
         SetDefaultValue();
+        LoadSettings(GetSelectedText(cmbProjectName));
+
+        Loaded += OnLoaded;
     }
 
     // ----------------------------------------------------
     // Workspace Initialization (ONLY ONCE)
     // ----------------------------------------------------
-    protected override async void OnLoad(EventArgs e)
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        base.OnLoad(e);
         if (string.IsNullOrWhiteSpace(_slnPath))
         {
             MessageBox.Show("Please set the solution path in settings.");
@@ -55,16 +56,17 @@ public partial class FileCreatorForm : Form
         }
         try
         {
-            UseWaitCursor = true;
+            Mouse.OverrideCursor = Cursors.Wait;
             _workspace = _cache.GetWorkspace();
 
             await _workspace.WarmupAsync();
         }
         catch
         {
-            using var settings = _serviceProvider.GetRequiredService<SettingsForm>();
+            var settings = _serviceProvider.GetRequiredService<SettingsForm>();
+            settings.Owner = this;
 
-            if (settings.ShowDialog(this) == DialogResult.OK)
+            if (settings.ShowDialog() == true)
             {
                 _workspace = _cache.GetWorkspace();
                 await _workspace.WarmupAsync();
@@ -76,9 +78,8 @@ public partial class FileCreatorForm : Form
         }
         finally
         {
-            UseWaitCursor = false;
+            Mouse.OverrideCursor = null;
         }
-
     }
 
     // ----------------------------------------------------
@@ -96,7 +97,7 @@ public partial class FileCreatorForm : Form
         // همه‌ی مسیرها یک‌جا resolve می‌شن و در GenerationContext می‌شینن
         _context.Paths = _pathsProvider.Load(projectName, _slnPath);
 
-        btnGenerate.Enabled =
+        btnGenerate.IsEnabled =
             !string.IsNullOrWhiteSpace(_context.SolutionPath) &&
             !string.IsNullOrWhiteSpace(_context.Paths.UseCasesBasePath) &&
             !string.IsNullOrWhiteSpace(_context.Paths.WebBasePath) &&
@@ -106,42 +107,37 @@ public partial class FileCreatorForm : Form
             !string.IsNullOrWhiteSpace(_context.Paths.InfrastructureBasePath) &&
             !string.IsNullOrWhiteSpace(_context.Paths.LocalizationBasePath) &&
             !string.IsNullOrEmpty(_context.Paths.SharedKernelToolsTestsBasePath);
-
-
     }
 
-    private void BtnSettings_Click(object sender, EventArgs e)
+    private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
         using var scope = _serviceProvider.CreateScope();
 
         var frm = scope.ServiceProvider.GetRequiredService<SettingsForm>();
-        
-        if (frm.ShowDialog(this) == DialogResult.OK)
+        frm.Owner = this;
+
+        if (frm.ShowDialog() == true)
         {
-            LoadSettings(cmbProjectName.Text);
+            LoadSettings(GetSelectedText(cmbProjectName));
 
             _workspace = _cache.GetWorkspace();
         }
-
     }
 
-
-    private void BtnGrpcGeneration_Click(object sender, EventArgs e)
+    private void BtnGrpcGeneration_Click(object sender, RoutedEventArgs e)
     {
         using var scope = _serviceProvider.CreateScope();
 
         var frm = scope.ServiceProvider.GetRequiredService<GrpcGenerationForm>();
+        frm.Owner = this;
 
-        frm.ShowDialog(this);
-
+        frm.ShowDialog();
     }
-
-
 
     // ----------------------------------------------------
     // GENERATION PIPELINE
     // ----------------------------------------------------
-    private async void BtnGenerate_Click(object sender, EventArgs e)
+    private async void BtnGenerate_Click(object sender, RoutedEventArgs e)
     {
         if (_workspace is null)
         {
@@ -152,12 +148,12 @@ public partial class FileCreatorForm : Form
         string useCaseName = txtUseCaseName.Text.Trim();
         string route = txtRoute.Text.Trim();
 
-        RequestType type = Enum.Parse<RequestType>(cmbType.SelectedItem?.ToString() ?? "Command");
-        ResponseType responseType = Enum.Parse<ResponseType>(cmbResponseType.SelectedItem?.ToString() ?? "Single");
-        HttpVerb httpVerb = Enum.Parse<HttpVerb>(cmbVerb.SelectedItem?.ToString()?.ToUpper() ?? "POST");
+        RequestType type = Enum.Parse<RequestType>(GetSelectedText(cmbType) is { Length: > 0 } t ? t : "Command");
+        ResponseType responseType = Enum.Parse<ResponseType>(GetSelectedText(cmbResponseType) is { Length: > 0 } r ? r : "Single");
+        HttpVerb httpVerb = Enum.Parse<HttpVerb>((GetSelectedText(cmbVerb) is { Length: > 0 } v ? v : "POST").ToUpper());
 
-        bool hasRequest = chkHasRequest.Checked;
-        bool hasResponse = chkHasResponse.Checked;
+        bool hasRequest = chkHasRequest.IsChecked == true;
+        bool hasResponse = chkHasResponse.IsChecked == true;
 
         // -------- VALIDATION --------
 
@@ -202,7 +198,7 @@ public partial class FileCreatorForm : Form
 
         try
         {
-            UseWaitCursor = true;
+            Mouse.OverrideCursor = Cursors.Wait;
 
             // 1️⃣ Generate Roslyn Files (memory only)
             var generator = new RoslynFileCreator(
@@ -226,9 +222,9 @@ public partial class FileCreatorForm : Form
             _workspace.InjectGeneratedFiles(previewFiles);
 
             // 3️⃣ Show Preview (Viewer Only)
-            using var previewForm = new PreviewForm(_workspace, previewFiles);
+            var previewForm = new PreviewForm(_workspace, previewFiles) { Owner = this };
 
-            if (previewForm.ShowDialog() != DialogResult.OK)
+            if (previewForm.ShowDialog() != true)
             {
                 return;
             }
@@ -252,7 +248,7 @@ public partial class FileCreatorForm : Form
         }
         finally
         {
-            UseWaitCursor = false;
+            Mouse.OverrideCursor = null;
         }
     }
 
@@ -271,58 +267,67 @@ public partial class FileCreatorForm : Form
         return file ?? throw new FileNotFoundException("ApiRoutes.cs not found.");
     }
 
-    private void BtnExit_Click(object sender, EventArgs e)
+    private static string GetSelectedText(ComboBox combo)
+    {
+        return combo.SelectedItem switch
+        {
+            ComboBoxItem item => item.Content?.ToString() ?? string.Empty,
+            null => string.Empty,
+            var other => other.ToString() ?? string.Empty
+        };
+    }
+
+    private void BtnExit_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
 
-    private void ChkHasResponse_CheckedChanged(object sender, EventArgs e)
+    private void ChkHasResponse_CheckedChanged(object sender, RoutedEventArgs e)
     {
         if (cmbType.SelectedItem == null)
             return;
 
-        var type = (RequestType)Enum.Parse(typeof(RequestType), cmbType.SelectedItem.ToString()!);
+        var type = Enum.Parse<RequestType>(GetSelectedText(cmbType));
 
         if (type == RequestType.Command)
         {
-            if (chkHasResponse.Checked)
+            if (chkHasResponse.IsChecked == true)
             {
-                cmbResponseType.Enabled = false;
-                cmbResponseType.SelectedItem = ResponseType.Single.ToString();
+                cmbResponseType.IsEnabled = false;
+                SelectComboItem(cmbResponseType, ResponseType.Single.ToString());
             }
             else
             {
-                cmbResponseType.Enabled = false;
+                cmbResponseType.IsEnabled = false;
                 cmbResponseType.SelectedItem = null;
             }
         }
-
     }
 
-    private void CmbType_SelectedIndexChanged(object sender, EventArgs e)
+    private void CmbType_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (cmbType.SelectedItem == null)
             return;
 
-        var type = Enum.Parse<RequestType>(cmbType.SelectedItem.ToString()!);
+        var type = Enum.Parse<RequestType>(GetSelectedText(cmbType));
 
         switch (type)
         {
             case RequestType.Command:
                 {
                     // Command may or may not return data
-                    chkHasResponse.Enabled = true;
+                    chkHasResponse.IsEnabled = true;
 
-                    if (!chkHasResponse.Checked)
+                    if (chkHasResponse.IsChecked != true)
                     {
-                        cmbResponseType.Enabled = false;
-                        cmbResponseType.Visible = false;
+                        cmbResponseType.IsEnabled = false;
+                        cmbResponseType.Visibility = Visibility.Hidden;
                     }
                     else
                     {
-                        cmbResponseType.Visible = true;
-                        cmbResponseType.Enabled = false;
-                        cmbResponseType.SelectedItem = ResponseType.Single.ToString();
+                        cmbResponseType.Visibility = Visibility.Visible;
+                        cmbResponseType.IsEnabled = false;
+                        SelectComboItem(cmbResponseType, ResponseType.Single.ToString());
                     }
 
                     break;
@@ -330,10 +335,10 @@ public partial class FileCreatorForm : Form
 
             case RequestType.Query:
                 {
-                    chkHasResponse.Checked = true;
-                    chkHasResponse.Enabled = false;
+                    chkHasResponse.IsChecked = true;
+                    chkHasResponse.IsEnabled = false;
 
-                    cmbResponseType.Enabled = true;
+                    cmbResponseType.IsEnabled = true;
 
                     if (cmbResponseType.SelectedItem == null)
                         cmbResponseType.SelectedIndex = 0;
@@ -342,35 +347,37 @@ public partial class FileCreatorForm : Form
                 }
         }
     }
-    private async void MenuUpdateEnums_Click(object? sender, EventArgs e)
+
+    private async void MenuUpdateEnums_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            menuUpdateEnums.Enabled = false;
-            Cursor = Cursors.WaitCursor;
+            menuUpdateEnums.IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.Wait;
 
             await Task.Run(UpdateEnumsInSolution);
 
             MessageBox.Show(
                 "Enum Display attributes updated successfully.",
                 "Success",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
                 ex.Message,
                 "Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
-            menuUpdateEnums.Enabled = true;
-            Cursor = Cursors.Default;
+            menuUpdateEnums.IsEnabled = true;
+            Mouse.OverrideCursor = null;
         }
     }
+
     private void UpdateEnumsInSolution()
     {
         var solutionPath = Properties.Settings.Default.SolutionPath;
@@ -404,7 +411,8 @@ public partial class FileCreatorForm : Form
             }
         }
     }
-    private void MenuUpdateResx_Click(object sender, EventArgs e)
+
+    private void MenuUpdateResx_Click(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -449,10 +457,6 @@ public partial class FileCreatorForm : Form
 
             var newClass = newDesignClass.NormalizeWhitespace().ToFullString();
 
-
-
-
-
             MessageBox.Show("Resx sync completed successfully.");
         }
         catch (Exception ex)
@@ -461,31 +465,65 @@ public partial class FileCreatorForm : Form
         }
     }
 
-    private void CmbProjectName_SelectedIndexChanged(object sender, EventArgs e)
+    private void CmbProjectName_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var item = cmbProjectName.SelectedItem?.ToString();
-        if (item != null)
+        var item = GetSelectedText(cmbProjectName);
+        if (!string.IsNullOrEmpty(item))
         {
             LoadSettings(item);
         }
-
     }
 
-    private void btnGenerate_EnabledChanged(object sender, EventArgs e)
+    private void BtnGenerate_IsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (sender is Button button)
         {
-            if (button.Enabled)
+            if (button.IsEnabled)
             {
-                button.BackColor = Color.FromArgb(0, 122, 204);
-                button.ForeColor = Color.White;
+                button.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(255, 0, 122, 204));
+                button.Foreground = System.Windows.Media.Brushes.White;
             }
             else
             {
-                button.BackColor = Color.LightGray;
-                button.ForeColor = Color.DarkGray;
-                MessageBox.Show("Solution path is not configured.", "sln Path Required", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                button.Background = System.Windows.Media.Brushes.LightGray;
+                button.Foreground = System.Windows.Media.Brushes.DarkGray;
+                MessageBox.Show("Solution path is not configured.", "sln Path Required", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+    }
+
+    private static void SelectComboItem(ComboBox combo, string text)
+    {
+        foreach (var obj in combo.Items)
+        {
+            if (obj is ComboBoxItem item && string.Equals(item.Content?.ToString(), text, StringComparison.Ordinal))
+            {
+                combo.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    private void SetDefaultValue()
+    {
+        cmbProjectName.SelectedIndex = 0;
+        txtUseCaseGroup.Text = "ErrorLog";
+        txtUseCaseName.Text = "Create";
+        txtRoute.Text = "error-logs";
+        cmbType.SelectedIndex = 0;
+        cmbVerb.SelectedIndex = 0;
+        cmbResponseType.SelectedIndex = 0;
+        chkHasRequest.IsChecked = true;
+        chkHasResponse.IsChecked = true;
+    }
+
+    // Allow dragging the borderless window by its menu bar.
+    private void MenuBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
         }
     }
 }

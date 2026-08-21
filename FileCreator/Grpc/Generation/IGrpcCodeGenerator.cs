@@ -3,6 +3,7 @@ using GrpcScaffold.Core.Analysis.Models;
 using GrpcScaffold.Core.Generation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using static System.Net.WebRequestMethods;
 

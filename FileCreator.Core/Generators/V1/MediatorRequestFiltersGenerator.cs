@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace FileCreator.Core.Generators.V2;
+namespace FileCreator.Core.Generators.V1;
 
 public class MediatorRequestFiltersGenerator
 {

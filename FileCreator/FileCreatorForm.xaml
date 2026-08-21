@@ -1,0 +1,108 @@
+<Window x:Class="FileCreator.FileCreatorForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UseCase &amp; Endpoint File Creator"
+        Width="470" Height="230"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E"
+        Foreground="Gainsboro"
+        FontFamily="Segoe UI">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Menu bar (also acts as a drag handle for the borderless window) -->
+        <DockPanel Grid.Row="0" Background="#2D2D30" MouseLeftButtonDown="MenuBar_MouseLeftButtonDown">
+            <Menu DockPanel.Dock="Left" Background="#2D2D30" Foreground="Gainsboro" VerticalAlignment="Center">
+                <MenuItem Header="File" Foreground="Gainsboro">
+                    <MenuItem x:Name="menuSettings" Header="Settings..." Click="BtnSettings_Click" />
+                    <MenuItem x:Name="menuGrpcGeneration" Header="Grpc Generation" Click="BtnGrpcGeneration_Click" />
+                    <MenuItem x:Name="menuUpdateEnums" Header="Update Enum Display Attributes" Click="MenuUpdateEnums_Click" />
+                    <MenuItem x:Name="menuUpdateResx" Header="Sync Resx Keys" Click="MenuUpdateResx_Click" />
+                    <MenuItem x:Name="menuExit" Header="Exit" Click="BtnExit_Click" />
+                </MenuItem>
+            </Menu>
+
+            <ComboBox x:Name="cmbProjectName"
+                      DockPanel.Dock="Right"
+                      Width="140" Margin="4"
+                      VerticalAlignment="Center"
+                      SelectionChanged="CmbProjectName_SelectionChanged">
+                <ComboBoxItem>AuthorizationManager</ComboBoxItem>
+                <ComboBoxItem>UserManagement</ComboBoxItem>
+                <ComboBoxItem>IdentityServer</ComboBoxItem>
+                <ComboBoxItem>FileStore</ComboBoxItem>
+                <ComboBoxItem>AuditLogging</ComboBoxItem>
+                <ComboBoxItem>TicketManagement</ComboBoxItem>
+            </ComboBox>
+        </DockPanel>
+
+        <Grid Grid.Row="1" Margin="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Row 0: Use Case Group + Use Case Name -->
+            <TextBox x:Name="txtUseCaseGroup" Grid.Row="0" Grid.Column="0" Margin="0,0,0,8"
+                     Tag="Use Case Group" />
+            <TextBox x:Name="txtUseCaseName" Grid.Row="0" Grid.Column="2" Margin="0,0,0,8"
+                     Tag="Use Case Name" />
+
+            <!-- Row 1: Type + Request/Response checkboxes -->
+            <ComboBox x:Name="cmbType" Grid.Row="1" Grid.Column="0" Margin="0,0,0,8"
+                      SelectionChanged="CmbType_SelectionChanged">
+                <ComboBoxItem>Command</ComboBoxItem>
+                <ComboBoxItem>Query</ComboBoxItem>
+            </ComboBox>
+            <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,8">
+                <CheckBox x:Name="chkHasRequest" Content="Request" IsChecked="True" Margin="0,0,16,0" VerticalAlignment="Center" />
+                <CheckBox x:Name="chkHasResponse" Content="Response" IsChecked="True" VerticalAlignment="Center"
+                          Checked="ChkHasResponse_CheckedChanged" Unchecked="ChkHasResponse_CheckedChanged" />
+            </StackPanel>
+
+            <!-- Row 2: Verb + Route + ResponseType -->
+            <ComboBox x:Name="cmbVerb" Grid.Row="2" Grid.Column="0" Margin="0,0,0,8">
+                <ComboBoxItem>GET</ComboBoxItem>
+                <ComboBoxItem>POST</ComboBoxItem>
+                <ComboBoxItem>PUT</ComboBoxItem>
+                <ComboBoxItem>DELETE</ComboBoxItem>
+                <ComboBoxItem>PATCH</ComboBoxItem>
+            </ComboBox>
+            <Grid Grid.Row="2" Grid.Column="2" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="txtRoute" Grid.Column="0" Tag="tests/create" />
+                <ComboBox x:Name="cmbResponseType" Grid.Column="2" IsEnabled="False">
+                    <ComboBoxItem>Single</ComboBoxItem>
+                    <ComboBoxItem>IEnumerable</ComboBoxItem>
+                    <ComboBoxItem>KeyValuePair</ComboBoxItem>
+                    <ComboBoxItem>PagedList</ComboBoxItem>
+                </ComboBox>
+            </Grid>
+
+            <!-- Row 3: Generate button -->
+            <Button x:Name="btnGenerate" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                    Height="32" Content="Generate UseCase + Endpoint Files"
+                    IsEnabled="True"
+                    Background="#007ACC" Foreground="White" BorderThickness="0"
+                    IsEnabledChanged="BtnGenerate_IsEnabledChanged"
+                    Click="BtnGenerate_Click" />
+        </Grid>
+    </Grid>
+</Window>

@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace FileCreator.Core.Generators.V2;
+namespace FileCreator.Core.Generators.V1;
 
 public class EndpointGenerator
 {

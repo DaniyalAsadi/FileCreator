@@ -2,6 +2,7 @@ using FileCreator.Grpc.ViewModels;
 using GrpcScaffold.Core.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace FileCreator.Grpc.Writers;

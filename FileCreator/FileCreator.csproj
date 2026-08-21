@@ -1,16 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows</TargetFramework>
 		<Nullable>enable</Nullable>
-		<UseWindowsForms>true</UseWindowsForms>
+		<UseWPF>true</UseWPF>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<StartupObject>FileCreator.Program</StartupObject>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FastColoredTextBox.NET10" Version="2.16.26.9180" />
 		<PackageReference Include="Humanizer" Version="3.0.1" />
 		<PackageReference Include="Humanizer.Core" Version="3.0.1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="5.6.0" />
