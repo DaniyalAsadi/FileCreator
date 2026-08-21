@@ -1,5 +1,6 @@
 ﻿using FileCreator.Core;
 using FileCreator.Core.Generators;
+using FileCreator.Core.Generators.V2;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -17,6 +18,7 @@ public class EndpointGeneratorTests
         var unit = EndpointGenerator.Generate(
             ns: "MyApp.Features.Region",
             useCaseNameSpace: "MyApp.Features.Region.Get",
+            projectName:"AuthorizationManager",
             group: "Region",
             useCaseName: "GetRegion",
             type: RequestType.Query,
@@ -52,6 +54,7 @@ public class EndpointGeneratorTests
         var unit = EndpointGenerator.Generate(
             ns: "Test",
             useCaseNameSpace: "Test",
+            projectName: "AuthorizationManager",
             group: "Region",
             useCaseName: "Ping",
             type: RequestType.Command,
@@ -81,6 +84,7 @@ public class EndpointGeneratorTests
         var unit = EndpointGenerator.Generate(
             "Test",
             "Test",
+            "AuthorizationManager",
             "Region",
             "CreateRegion",
             RequestType.Command,
@@ -107,6 +111,7 @@ public class EndpointGeneratorTests
         var unit = EndpointGenerator.Generate(
             "Test",
             "Test",
+            "AuthorizationManager",
             "Region",
             "DeleteRegion",
             RequestType.Command,
@@ -127,15 +132,16 @@ public class EndpointGeneratorTests
     public void Generate_Should_Add_Configure_Metadata()
     {
         var unit = EndpointGenerator.Generate(
-            "Test",
-            "Test",
-            "Region",
-            "GetRegion",
-            RequestType.Query,
-            HttpVerb.GET,
-            true,
-            true,
-            ResponseType.Single);
+            ns: "Test",
+            useCaseNameSpace: "Test",
+            projectName: "AuthorizationManager",
+            group: "Region",
+            useCaseName: "GetRegion",
+            type: RequestType.Query,
+            httpVerb: HttpVerb.GET,
+            hasRequest: true,
+            hasResponse: true,
+            responseType: ResponseType.Single);
 
         var configure = unit.DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
@@ -143,8 +149,7 @@ public class EndpointGeneratorTests
 
         var body = configure.Body!.ToString();
 
-        body.Should().Contain("Tags(ApiRoutes.Region.Tag)");
-        body.Should().Contain("Specify(ApiRoutes.Region.GetRegion)");
+        body.Should().Contain("Specify(ApiRoutes.AuthorizationManager.Region.GetRegion)");
         body.Should().Contain("Summary");
     }
 
@@ -157,6 +162,7 @@ public class EndpointGeneratorTests
         var unit = EndpointGenerator.Generate(
             "Test",
             "Test",
+            "AuthorizationManager",
             "Region",
             "ListRegion",
             RequestType.Query,
