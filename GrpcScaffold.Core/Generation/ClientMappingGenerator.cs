@@ -42,7 +42,7 @@ public sealed class ClientMappingGenerator(TemplateEngine templates)
             ["has_response"] = endpoint.Response is not null,
             ["request_mapping"] = BuildOutboundRequestMapping(endpoint, protoNamespace),
             ["response_mapping"] = BuildInboundResponseMapping(endpoint, contractNamespace),
-            ["usings"] = BuildUsings(endpoint, contractNamespace),
+            ["usings"] = BuildUsings(contractNamespace),
             ["grpc_request_type"] = endpoint.Request is null
                 ? "Google.Protobuf.WellKnownTypes.Empty"
                 : $"{protoNamespace}.{endpoint.Request.Name}",
@@ -62,20 +62,13 @@ public sealed class ClientMappingGenerator(TemplateEngine templates)
         return model;
     }
 
-    private static IReadOnlyList<string> BuildUsings(EndpointModel endpoint, string contractNamespace)
+    private static IReadOnlyList<string> BuildUsings(string contractNamespace)
     {
         var list = new List<string> { contractNamespace };
 
         // Scalar conversions use these namespaces in generated expressions.
         list.Add("System");
         list.Add("System.Collections.Generic");
-
-        if (endpoint.Request is not null && !string.IsNullOrWhiteSpace(endpoint.Request.Namespace))
-            list.Add(endpoint.Request.Namespace);
-
-        if (endpoint.Response is not null && !string.IsNullOrWhiteSpace(endpoint.Response.Namespace))
-            list.Add(endpoint.Response.Namespace);
-
         return list
             .Where(static x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal)

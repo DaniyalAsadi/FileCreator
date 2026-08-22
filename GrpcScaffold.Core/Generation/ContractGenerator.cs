@@ -136,8 +136,6 @@ public sealed class ContractGenerator
         sb.AppendLine("//   Safe to regenerate.");
         sb.AppendLine("// </auto-generated>");
         sb.AppendLine();
-        sb.AppendLine("#nullable enable");
-        sb.AppendLine();
         sb.Append("namespace ").Append(ns).AppendLine(";");
         sb.AppendLine();
         sb.Append("public sealed record ").Append(contract.Name).AppendLine();
