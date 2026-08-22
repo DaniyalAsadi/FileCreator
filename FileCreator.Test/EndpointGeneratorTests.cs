@@ -1,6 +1,6 @@
 ﻿using FileCreator.Core;
 using FileCreator.Core.Generators;
-using FileCreator.Core.Generators.V2;
+using FileCreator.Core.Generators.V1;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

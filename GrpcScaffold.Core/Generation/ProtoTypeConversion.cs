@@ -309,6 +309,8 @@ internal static class ProtoTypeConversion
             ScalarKind.Guid or ScalarKind.DateOnly or ScalarKind.Decimal
                 => $"{source} is null ? string.Empty : {Convert(accessor)}",
 
+            ScalarKind.DateTime or ScalarKind.DateTimeOffset or ScalarKind.Dictionary
+            => $"{source} is null ? null : {Convert(accessor)}",
             // DateTime/DateTimeOffset map to the Timestamp *message*, whose generated property
             // is a plain reference type without null checks — `null` is a valid assignment
             // there and correctly encodes "no value".
