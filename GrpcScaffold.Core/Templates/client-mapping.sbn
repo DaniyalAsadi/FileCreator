@@ -34,13 +34,20 @@ public static class {{ mapping_class_name }}
         var result = new GrpcRequest
         {
 {{~ for mapping in request_mapping ~}}
-{{~ if !mapping.is_repeated ~}}
+{{~ if !mapping.is_repeated && !mapping.has_presence ~}}
             {{ mapping.destination }} = {{ mapping.expression }}{{ if !for.last }},{{ end }}
 {{~ end ~}}
 {{~ end ~}}
         };
 {{~ for mapping in request_mapping ~}}
-{{~ if mapping.is_repeated ~}}
+{{~ if mapping.has_presence ~}}
+        // proto3 `optional` field — a CLR null must leave the field unset, since the
+        // generated property setter would otherwise set the presence bit on the wire.
+        if (request.{{ mapping.destination }} is not null)
+        {
+            result.{{ mapping.destination }} = {{ mapping.expression }};
+        }
+{{~ else if mapping.is_repeated ~}}
         if (request.{{ mapping.destination }} is not null)
         {
             result.{{ mapping.destination }}.AddRange(

@@ -1,4 +1,4 @@
-﻿// src/GrpcScaffold.Core/Generation/ProtoTypeConversion.cs
+// src/GrpcScaffold.Core/Generation/ProtoTypeConversion.cs
 using GrpcScaffold.Core.Analysis.Models;
 using Microsoft.CodeAnalysis;
 
@@ -49,6 +49,26 @@ internal static class ProtoTypeConversion
         DateTimeOffset,
 
         Dictionary
+    }
+
+    /// <summary>
+    /// Whether the proto field generated for this reference gets a proto3 <c>optional</c>
+    /// presence accessor in C# (<c>Has&lt;Name&gt;</c> / <c>Clear&lt;Name&gt;</c>).
+    ///
+    /// <c>ProtoGenerator</c> emits the <c>optional</c> label for every nullable-annotated
+    /// contract field, but only scalar/enum/string fields actually gain <c>HasX</c> in the
+    /// generated C# — message-backed shapes (Timestamp for DateTime/DateTimeOffset,
+    /// google.protobuf.Struct, maps, repeated fields, nested messages) keep their natural
+    /// null-based presence instead. Callers AND this with the field's nullability
+    /// annotation to decide whether a <c>HasX</c> accessor exists.
+    /// </summary>
+    public static bool HasProtoPresenceAccessor(ProtoTypeReference reference)
+    {
+        if (reference.IsRepeated || reference.IsMessage || reference.IsStruct || reference.IsMap)
+            return false;
+
+        var kind = Classify(UnwrapNullable(reference.ClrType));
+        return kind is not (ScalarKind.DateTime or ScalarKind.DateTimeOffset);
     }
 
     /// <summary>Unwraps <c>Nullable&lt;T&gt;</c> down to <c>T</c>; returns the type unchanged otherwise.</summary>
@@ -119,7 +139,25 @@ internal static class ProtoTypeConversion
     /// equivalent. Does not handle repeated or message types — see
     /// <see cref="MappingGenerator"/> for how those wrap this.
     /// </summary>
-    public static string ProtoScalarToClr(ProtoTypeReference reference, string source, string? clrNamespaceOverride = null)
+    /// <param name="presenceSource">
+    /// The generated <c>HasX</c> accessor for the source proto field (e.g.
+    /// <c>request.HasPage</c>), when the field was emitted as a proto3 <c>optional</c>
+    /// scalar/enum/string — <see cref="HasProtoPresenceAccessor"/>. <c>null</c> when the
+    /// field has no presence accessor; "unset" then falls back to the wire default,
+    /// matching plain proto3 semantics.
+    /// </param>
+    /// <param name="destinationNullable">
+    /// Whether the assignment destination (mediator ctor parameter / BFF contract property)
+    /// can actually receive null — the caller computes it from the destination's nullability
+    /// annotation or <c>Nullable&lt;T&gt;</c> shape. Null-guards are only emitted when this
+    /// is true, so non-nullable destinations keep their existing fail-on-missing behavior.
+    /// </param>
+    public static string ProtoScalarToClr(
+        ProtoTypeReference reference,
+        string source,
+        string? clrNamespaceOverride = null,
+        string? presenceSource = null,
+        bool destinationNullable = false)
     {
         if (reference.IsRepeated || reference.IsMessage)
         {
@@ -132,19 +170,24 @@ internal static class ProtoTypeConversion
 
         var clr = UnwrapNullable(reference.ClrType);
         var clrDisplay = QualifyClrType(clr, clrNamespaceOverride);
-        var isNullableStruct = reference.IsNullable && clr.IsValueType;
         var kind = Classify(clr);
 
         if (reference.IsEnum)
         {
-            return isNullableStruct
-                ? $"{source} is null ? ({clrDisplay}?)null : ({clrDisplay}){source}"
-                : $"({clrDisplay}){source}";
+            var cast = $"({clrDisplay}){source}";
+
+            // proto3 `optional enum` tracks "unset" via HasX instead of the zero value (gap
+            // #6). Without a presence accessor proto3 enums cannot represent unset — the
+            // plain wire cast is all we can do (this also replaces the old dead `is null`
+            // guard, which could never fire for a non-nullable value type).
+            return destinationNullable && presenceSource is not null
+                ? $"{presenceSource} ? {cast} : ({clrDisplay}?)null"
+                : cast;
         }
 
         // Only a proto message (Timestamp) can itself be null on the wire; string-backed
-        // scalars (Guid/DateOnly/decimal) are never null, so there's nothing to guard there —
-        // a missing value simply fails to parse, which is the correct behavior to surface.
+        // scalars (Guid/DateOnly/decimal) are never null on the wire — their "unset" state
+        // is the empty string, which only becomes CLR null through a presence guard below.
         var sourceIsProtoMessage = kind is ScalarKind.DateTime or ScalarKind.DateTimeOffset;
 
         string Convert(string s) => kind switch
@@ -159,19 +202,51 @@ internal static class ProtoTypeConversion
             _ => s // plain proto3 primitive (bool/int/long/float/double/string) — no conversion needed.
         };
 
-        if (!isNullableStruct)
+        // Non-nullable destination: unchanged — a missing/unset value surfaces as the wire
+        // default or a parse failure, which is the documented fail-fast behavior.
+        if (!destinationNullable)
             return Convert(source);
 
-        return sourceIsProtoMessage
-            ? $"{source} is null ? ({clrDisplay}?)null : {Convert(source)}"
-            : Convert(source);
+        // Timestamp-backed nullables: the proto property itself is null when unset.
+        if (sourceIsProtoMessage)
+            return $"{source} is null ? ({clrDisplay}?)null : {Convert(source)}";
+
+        // proto3 `optional` scalar/enum/string field with a nullable destination (gaps
+        // #5/#6): an unset wire field maps to null instead of 0 / "" / a parse exception.
+        if (presenceSource is not null)
+        {
+            // string is the only nullable reference-typed scalar; it needs no conversion
+            // and no (T?) cast on the null branch.
+            if (kind == ScalarKind.None && !clr.IsValueType)
+                return $"{presenceSource} ? {source} : null";
+
+            return $"{presenceSource} ? {Convert(source)} : ({clrDisplay}?)null";
+        }
+
+        // Nullable destination but no presence accessor (e.g. contracts analyzed from a
+        // nullable-disabled context): keep the previous pass-through/parse behavior.
+        return Convert(source);
     }
 
     /// <summary>
     /// Converts a single CLR scalar value (<paramref name="source"/>) into its proto/gRPC
     /// equivalent. Does not handle repeated or message types.
     /// </summary>
-    public static string ClrScalarToProto(ProtoTypeReference reference, string source, string? protoNamespace = null)
+    /// <param name="clrNullable">
+    /// Whether the CLR source is annotated as a nullable reference type (e.g. <c>string?</c>).
+    /// Reference-type nullability never flows through <see cref="ProtoTypeReference.IsNullable"/>
+    /// (that flag only tracks <c>Nullable&lt;T&gt;</c>), so callers pass it explicitly.
+    /// </param>
+    /// <param name="presenceHandledByCaller">
+    /// When true, the target proto field was emitted as proto3 <c>optional</c> and the
+    /// caller's template guards the whole assignment with
+    /// <c>if (source is not null) target = &lt;expr&gt;;</c> (gap #6: assigning a value — even
+    /// <c>default</c> — through the generated property would set the presence bit, turning
+    /// CLR null into "zero, but present" on the wire). In this mode the returned expression
+    /// is the plain non-null conversion; no inline null handling is emitted. Nested message
+    /// fields always pass <c>false</c> and keep the inline fallbacks.
+    /// </param>
+    public static string ClrScalarToProto(ProtoTypeReference reference, string source, string? protoNamespace = null, bool clrNullable = false, bool presenceHandledByCaller = false)
     {
         if (reference.IsRepeated || reference.IsMessage)
         {
@@ -188,7 +263,7 @@ internal static class ProtoTypeConversion
         if (reference.IsEnum)
         {
             var expr = $"({QualifyProtoType(reference.ProtoTypeName, protoNamespace)}){accessor}";
-            return isNullableStruct ? $"{source} is null ? default : {expr}" : expr;
+            return isNullableStruct && !presenceHandledByCaller ? $"{source} is null ? default : {expr}" : expr;
         }
 
         string Convert(string s) => kind switch
@@ -203,21 +278,42 @@ internal static class ProtoTypeConversion
             _ => s
         };
 
+        // Nullable reference type (string? is the only nullable scalar reference type — every
+        // other ScalarKind is a struct). The generated proto `string` setter rejects null via
+        // pb::ProtoPreconditions.CheckNotNull, so null collapses to the proto3 wire default "".
+        if (clrNullable && !isNullableStruct && clr.SpecialType == SpecialType.System_String)
+            return presenceHandledByCaller ? source : $"{source} ?? string.Empty";
+
         if (!isNullableStruct)
             return Convert(source);
 
-        // Guid/DateOnly/Decimal map to proto `string`, and DateTime/DateTimeOffset map to
-        // the Timestamp *message* — both are reference types in generated C#, so `null` is
-        // a valid value to assign. Every other nullable value type (int?, long?, bool?,
-        // float?, double? — ScalarKind.None) maps to a plain, non-optional proto3 scalar,
-        // whose generated property is a non-nullable value type (`int`, not `int?`).
-        // Assigning `null` there does not compile (this was a real bug in the previous
-        // implementation). proto3 has no way to represent "unset" on a plain scalar anyway
-        // — the wire default *is* the absence of a value — so collapsing to `default` here
-        // mirrors exactly what the enum branch above already does, not a new invented rule.
-        return kind == ScalarKind.None
-            ? $"{source} is null ? default : {accessor}"
-            : $"{source} is null ? null : {Convert(accessor)}";
+        // The caller emits `if (source is not null) { grpc.X = <expr>; }` — just the value.
+        if (presenceHandledByCaller)
+            return kind == ScalarKind.None ? accessor : Convert(accessor);
+
+        return kind switch
+        {
+            // Plain proto3 scalars (int?, long?, bool?, float?, double?) land on non-nullable
+            // value-type properties (`int`, not `int?`). Assigning `null` there does not
+            // compile (this was a real bug in a previous implementation). proto3 has no way
+            // to represent "unset" on a plain scalar anyway — the wire default *is* the
+            // absence of a value — so collapsing to `default` mirrors exactly what the enum
+            // branch above already does, not a new invented rule.
+            ScalarKind.None => $"{source} is null ? default : {accessor}",
+
+            // Guid/DateOnly/decimal map to proto `string`, whose generated setter throws
+            // ArgumentNullException on null (CheckNotNull) — `null` is NOT a valid assignment
+            // despite `string` being a reference type. proto3's wire default for strings is
+            // "", so null collapses to string.Empty instead (same family as the `default`
+            // rule above, not a new invented rule).
+            ScalarKind.Guid or ScalarKind.DateOnly or ScalarKind.Decimal
+                => $"{source} is null ? string.Empty : {Convert(accessor)}",
+
+            // DateTime/DateTimeOffset map to the Timestamp *message*, whose generated property
+            // is a plain reference type without null checks — `null` is a valid assignment
+            // there and correctly encodes "no value".
+            _ => $"{source} is null ? null : {Convert(accessor)}"
+        };
     }
 
     /// <summary>
