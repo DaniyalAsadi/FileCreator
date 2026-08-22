@@ -87,19 +87,31 @@ public sealed class ClientMappingGenerator(TemplateEngine templates)
 
         return [.. endpoint.Request.Fields.Select(field =>
         {
+            // proto3 `optional` scalar/string field with a nullable CLR source (gap #6):
+            // the template guards the assignment at statement level so null never sets
+            // the presence bit, and the expression carries the plain non-null value.
+            var hasPresence = field.IsNullable &&
+                ProtoTypeConversion.HasProtoPresenceAccessor(field.Reference);
+
             var expression = BuildClrToProtoExpression(
                 field.Reference,
                 $"request.{field.Name}",
                 lookup,
-                protoNamespace: protoNamespace);
+                protoNamespace: protoNamespace,
+                // Reference-type nullability (string?, Details?) only exists as a field
+                // annotation — the type reference itself never carries it.
+                clrNullable: field.IsNullable,
+                presenceHandledByCaller: hasPresence);
 
             ThrowIfUnsupported(endpoint, field, expression, "client request");
 
             return new Dictionary<string, object?>
             {
                 ["destination"] = field.Name,
+                ["source"] = $"request.{field.Name}",
                 ["expression"] = expression,
                 ["is_repeated"] = field.Reference.IsRepeated,
+                ["has_presence"] = hasPresence,
                 ["needs_review"] = false
             };
         })];
@@ -115,12 +127,26 @@ public sealed class ClientMappingGenerator(TemplateEngine templates)
         return [.. endpoint.Response.Fields.Select(field =>
         {
             var materializer = ProtoTypeConversion.CollectionMaterializer(field.DeclaredClrType ?? field.Reference.ClrType);
+
+            // proto3 `optional` scalar/string fields expose a HasX accessor generated from the
+            // same nullability annotation the proto template used — reading it maps "unset on
+            // the wire" to null instead of 0 / "" / a parse exception (gaps #5/#6).
+            var hasPresence = field.IsNullable &&
+                ProtoTypeConversion.HasProtoPresenceAccessor(field.Reference);
+
             var expression = BuildProtoToClrExpression(
                 field.Reference,
                 $"response.{field.Name}",
                 lookup,
                 materializer,
-                clrNamespaceOverride: contractNamespace);
+                clrNamespaceOverride: contractNamespace,
+                // Reference-type nullability (Details?, List<T>?) only exists as a field
+                // annotation — the type reference itself never carries it.
+                clrNullable: field.IsNullable,
+                presenceSource: hasPresence ? $"response.Has{field.Name}" : null,
+                // The generated BFF contract preserves the annotation, and Nullable<T> covers
+                // nullable-disabled analysis contexts.
+                destinationNullable: field.IsNullable || field.Reference.IsNullable);
 
             ThrowIfUnsupported(endpoint, field, expression, "client response");
 

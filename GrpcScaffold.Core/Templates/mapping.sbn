@@ -52,19 +52,44 @@ public static class {{ mapping_class_name }}
     public static GrpcResponse MapToResponse({{ response.type_name }} result)
     {
         // <ai-generated:MapToResponse>
-        return new GrpcResponse
+        var grpc = new GrpcResponse
         {
 {{~ for field in response_mapping ~}}
-{{~ if field.needs_review ~}}
+{{~ if field.needs_review && !field.is_repeated && !field.has_presence ~}}
             // TODO: review mapping for '{{ field.destination }}'
 {{~ end ~}}
-{{~ if field.is_repeated ~}}
-            {{ field.destination }} = { {{ field.expression }} }{{ if !for.last }},{{ end }}
-{{~ else ~}}
-            {{ field.destination }} = {{ field.expression }}{{ if !for.last }},{{ end }}
+{{~ if !field.is_repeated && !field.has_presence ~}}
+            {{ field.destination }} = {{ field.expression }},
 {{~ end ~}}
 {{~ end ~}}
         };
+{{~ for field in response_mapping ~}}
+{{~ if field.is_repeated || field.has_presence ~}}
+{{~ if field.needs_review ~}}
+        // TODO: review mapping for '{{ field.destination }}'
+{{~ end ~}}
+{{~ if field.has_presence ~}}
+        // proto3 `optional` field — assigning even `default` through the generated
+        // property would set the presence bit, so a CLR null leaves the field unset.
+        if ({{ field.source }} is not null)
+        {
+            grpc.{{ field.destination }} = {{ field.expression }};
+        }
+{{~ else if field.is_nullable ~}}
+        // The CLR collection is annotated nullable — a null list maps to "field not set"
+        // instead of throwing. (Non-nullable collections stay unguarded on purpose.)
+        if ({{ field.source }} is not null)
+        {
+            grpc.{{ field.destination }}.AddRange(
+                {{ field.expression }});
+        }
+{{~ else ~}}
+        grpc.{{ field.destination }}.AddRange(
+            {{ field.expression }});
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+        return grpc;
         // </ai-generated:MapToResponse>
     }
 {{~ else ~}}

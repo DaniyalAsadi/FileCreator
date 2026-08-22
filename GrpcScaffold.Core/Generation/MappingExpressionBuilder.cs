@@ -108,7 +108,33 @@ internal static class MappingExpressionBuilder
         if (field is not null)
         {
             var materializer = ProtoTypeConversion.CollectionMaterializer(parameter.TypeName);
-            var expr = BuildProtoToClrExpression(field.Reference, $"{source}.{field.Name}", protoLookup, materializer);
+
+            // Destination nullability decides whether a null/presence guard may be emitted:
+            // the annotation, or a Nullable<T> parameter shape in nullable-disabled contexts.
+            var destinationNullable = parameter.IsNullable ||
+                parameter.Type is INamedTypeSymbol
+                {
+                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+                };
+
+            // Presence flows the other way: it exists on the proto field, which the
+            // ProtoGenerator marked `optional` based on the *request contract* annotation.
+            var presenceSource = field.IsNullable &&
+                ProtoTypeConversion.HasProtoPresenceAccessor(field.Reference)
+                    ? $"{source}.Has{field.Name}"
+                    : null;
+
+            // The presence guard for message-typed fields is likewise driven by the
+            // destination: a nullable constructor parameter can receive null when the proto
+            // field is unset on the wire; a non-nullable parameter keeps fail-on-missing.
+            var expr = BuildProtoToClrExpression(
+                field.Reference,
+                $"{source}.{field.Name}",
+                protoLookup,
+                materializer,
+                clrNullable: parameter.IsNullable,
+                presenceSource: presenceSource,
+                destinationNullable: destinationNullable);
             return (expr, false);
         }
 
@@ -166,7 +192,10 @@ internal static class MappingExpressionBuilder
         IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
         string collectionMaterializer = ".ToList()",
         ISet<ITypeSymbol>? visiting = null,
-        string? clrNamespaceOverride = null)
+        string? clrNamespaceOverride = null,
+        bool clrNullable = false,
+        string? presenceSource = null,
+        bool destinationNullable = false)
     {
         visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -176,6 +205,10 @@ internal static class MappingExpressionBuilder
 
             const string x = "x";
 
+            // The list-level annotation (clrNullable/presenceSource) is deliberately NOT
+            // forwarded: proto repeated fields are never null on the wire, and element
+            // nullability is a property of the element view (e.g. List<int?> flows through
+            // reference.IsNullable), not of the container.
             var elementExpr = BuildProtoToClrExpression(element, x, lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride);
 
             var projected = elementExpr == x
@@ -188,9 +221,16 @@ internal static class MappingExpressionBuilder
         // google.protobuf.Struct -> Dictionary<string, object?>
         if (reference.IsStruct)
         {
-            return $"{source}.Fields.ToDictionary(" +
-                   $"x => x.Key, " +
-                   $"x => x.Value.ToObject<object?>())";
+            var read = $"{source}.Fields.ToDictionary(" +
+                       $"x => x.Key, " +
+                       $"x => x.Value.ToObject<object?>())";
+
+            // Struct is a proto message, so the wire may not carry it at all. Honour
+            // presence instead of dereferencing null: nullable targets receive null,
+            // non-nullable targets receive an empty dictionary ("no map" reads as "empty").
+            return clrNullable
+                ? $"{source} is null ? null : {read}"
+                : $"{source} is null ? new System.Collections.Generic.Dictionary<string, object?>() : {read}";
         }
 
         // protobuf map
@@ -226,16 +266,35 @@ internal static class MappingExpressionBuilder
                                     $"{source}.{nestedField.Name}",
                                     lookup,
                                     visiting: visiting,
-                                    clrNamespaceOverride: clrNamespaceOverride);
+                                    clrNamespaceOverride: clrNamespaceOverride,
+                                    clrNullable: nestedField.IsNullable,
+                                    presenceSource: NestedPresenceSource(nestedField, source),
+                                    destinationNullable: IsNullableDestination(nestedField));
                         });
 
-                        return $"new {QualifyClrType(nested, clrNamespaceOverride)}({string.Join(", ", args)})";
+                        var construction = $"new {QualifyClrType(nested, clrNamespaceOverride)}({string.Join(", ", args)})";
+
+                        // A proto message field may be unset on the wire (generated C# getter
+                        // returns null). Nullable targets honour that presence with a null
+                        // guard instead of dereferencing null. Constructor-based non-nullable
+                        // targets cannot be "emptied out" generically, so they keep the
+                        // previous fail-on-missing behaviour (a required value that is absent
+                        // surfaces as an exception, same family as DateTime/Guid parsing).
+                        return clrNullable
+                            ? $"{source} is null ? null : {construction}"
+                            : construction;
                     }
 
                     var assignments = nested.Fields.Select(f =>
-                        $"{f.Name} = {BuildProtoToClrExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride)}");
+                        $"{f.Name} = {BuildProtoToClrExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride, clrNullable: f.IsNullable, presenceSource: NestedPresenceSource(f, source), destinationNullable: IsNullableDestination(f))}");
 
-                    return $"new {QualifyClrType(nested, clrNamespaceOverride)} {{ {string.Join(", ", assignments)} }}";
+                    var initializer = $"new {QualifyClrType(nested, clrNamespaceOverride)} {{ {string.Join(", ", assignments)} }}";
+
+                    // Same presence guard; the empty-instance fallback is safe here because
+                    // this branch only runs when a parameterless construction shape exists.
+                    return clrNullable
+                        ? $"{source} is null ? null : {initializer}"
+                        : $"{source} is null ? new {QualifyClrType(nested, clrNamespaceOverride)}() : {initializer}";
                 }
 
                 return $"{source} /* TODO: map nested message '{reference.ClrType.Name}' manually */";
@@ -246,15 +305,16 @@ internal static class MappingExpressionBuilder
             }
         }
 
-        return ProtoTypeConversion.ProtoScalarToClr(reference, source, clrNamespaceOverride);
+        return ProtoTypeConversion.ProtoScalarToClr(
+            reference, source, clrNamespaceOverride, presenceSource, destinationNullable);
     }
 
     /// <summary>
     /// Converts a CLR field reference into a proto/gRPC expression, recursing through
     /// repeated collections and nested messages as needed. Repeated results are left as an
-    /// <c>IEnumerable&lt;T&gt;</c> projection — <c>RepeatedField&lt;T&gt;.Add(IEnumerable&lt;T&gt;)</c>
-    /// lets the template assign them via collection-initializer syntax (<c>Field = { expr }</c>)
-    /// without an intermediate <c>.ToList()</c>.
+    /// <c>IEnumerable&lt;T&gt;</c> projection — the templates feed them to
+    /// <c>RepeatedField&lt;T&gt;.AddRange(IEnumerable&lt;T&gt;)</c> (behind a null guard when
+    /// the source collection is annotated nullable) without an intermediate <c>.ToList()</c>.
     ///
     /// Used by: server BuildResponseMappings (result -> grpc response)
     ///          client BuildRequestMappings (clr request -> grpc request)
@@ -264,7 +324,9 @@ internal static class MappingExpressionBuilder
         string source,
         IReadOnlyDictionary<ITypeSymbol, ContractInfo> lookup,
         ISet<ITypeSymbol>? visiting = null,
-        string? protoNamespace = null)
+        string? protoNamespace = null,
+        bool clrNullable = false,
+        bool presenceHandledByCaller = false)
     {
         visiting ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -274,6 +336,8 @@ internal static class MappingExpressionBuilder
 
             const string x = "x";
 
+            // List-level nullability is handled by the caller's template (guarded AddRange);
+            // it must not leak onto the element view.
             var elementExpr = BuildClrToProtoExpression(element, x, lookup, visiting, protoNamespace);
 
             return elementExpr == x
@@ -284,7 +348,11 @@ internal static class MappingExpressionBuilder
         // Dictionary<string, object?> -> google.protobuf.Struct
         if (reference.IsStruct)
         {
-            return $"{source}.ToStruct()";
+            // Proto Struct properties accept null; guard a nullable dictionary source
+            // instead of letting the extension throw on it.
+            return clrNullable
+                ? $"{source} is null ? null : {source}.ToStruct()"
+                : $"{source}.ToStruct()";
         }
         if (reference.IsMap)
         {
@@ -303,9 +371,17 @@ internal static class MappingExpressionBuilder
                 if (lookup.TryGetValue(reference.ClrType, out var nested))
                 {
                     var assignments = nested.Fields.Select(f =>
-                        $"{f.Name} = {BuildClrToProtoExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting, protoNamespace)}");
+                        $"{f.Name} = {BuildClrToProtoExpression(f.Reference, $"{source}.{f.Name}", lookup, visiting, protoNamespace, clrNullable: f.IsNullable)}");
 
-                    return $"new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ {string.Join(", ", assignments)} }}";
+                    var construction = $"new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ {string.Join(", ", assignments)} }}";
+
+                    // A nullable CLR message source maps to null on the proto side (message
+                    // properties accept null — that is how proto3 encodes "not set") instead
+                    // of dereferencing it. Non-nullable sources stay unguarded: annotating a
+                    // contract as required and then passing null is an author error.
+                    return clrNullable
+                        ? $"{source} is null ? null : {construction}"
+                        : construction;
                 }
 
                 return $"{source} /* TODO: map nested message '{reference.ClrType.Name}' manually */";
@@ -316,8 +392,30 @@ internal static class MappingExpressionBuilder
             }
         }
 
-        return ProtoTypeConversion.ClrScalarToProto(reference, source, protoNamespace);
+        return ProtoTypeConversion.ClrScalarToProto(reference, source, protoNamespace, clrNullable, presenceHandledByCaller);
     }
+
+    /// <summary>
+    /// The generated <c>HasX</c> accessor for a proto3 <c>optional</c> field read through
+    /// <paramref name="sourceOwner"/> (e.g. <c>request.HasPage</c> /
+    /// <c>request.Filter.HasMinLevel</c>), or <c>null</c> when the proto field carries no
+    /// presence accessor (non-nullable contract annotation, or message-backed shapes).
+    /// Uses the same predicate <c>ProtoGenerator</c>/<c>service-proto.sbn</c> applies when
+    /// emitting the <c>optional</c> label, so the two can never drift apart.
+    /// </summary>
+    private static string? NestedPresenceSource(ProtoFieldInfo field, string sourceOwner) =>
+        field.IsNullable && ProtoTypeConversion.HasProtoPresenceAccessor(field.Reference)
+            ? $"{sourceOwner}.Has{field.Name}"
+            : null;
+
+    /// <summary>
+    /// Whether the destination property/parameter for this field can receive null: the
+    /// nullability annotation (reference types, and <c>Nullable&lt;T&gt;</c> in annotated
+    /// contexts) or a <c>Nullable&lt;T&gt;</c> shape visible on the type itself (covers
+    /// contracts analyzed from nullable-disabled contexts).
+    /// </summary>
+    private static bool IsNullableDestination(ProtoFieldInfo field) =>
+        field.IsNullable || field.Reference.IsNullable;
 
     private static string QualifyClrType(ContractInfo contract, string? clrNamespaceOverride)
     {

@@ -116,12 +116,29 @@ public sealed class MappingGenerator(TemplateEngine templates)
         return [.. endpoint.Response.Fields
             .Select(field =>
             {
-                var expression = BuildClrToProtoExpression(field.Reference, $"result.{field.Name}", lookup, protoNamespace: protoNamespace);
+                // proto3 `optional` scalar/string field with a nullable CLR source (gap #6):
+                // the template guards the assignment at statement level so null never sets
+                // the presence bit, and the expression carries the plain non-null value.
+                var hasPresence = field.IsNullable &&
+                    ProtoTypeConversion.HasProtoPresenceAccessor(field.Reference);
+
+                var expression = BuildClrToProtoExpression(
+                    field.Reference,
+                    $"result.{field.Name}",
+                    lookup,
+                    protoNamespace: protoNamespace,
+                    // Reference-type nullability (string?, Details?, List<T>?) lives on the
+                    // field annotation, not on the type reference — pass it explicitly.
+                    clrNullable: field.IsNullable,
+                    presenceHandledByCaller: hasPresence);
                 return new Dictionary<string, object?>
                 {
                     ["destination"] = field.Name,
+                    ["source"] = $"result.{field.Name}",
                     ["expression"] = expression,
                     ["is_repeated"] = field.Reference.IsRepeated,
+                    ["is_nullable"] = field.IsNullable,
+                    ["has_presence"] = hasPresence,
                     ["needs_review"] = expression.Contains("/* TODO", StringComparison.Ordinal)
                 };
             })];
