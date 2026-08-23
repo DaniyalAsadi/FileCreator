@@ -124,15 +124,18 @@ internal static class ProtoTypeConversion
     /// on top of <see cref="Classify"/> instead of a standalone <c>.Name</c> switch.
     /// </summary>
     public static bool NeedsCast(ProtoTypeReference reference) =>
-        Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
+        (reference.IsMap || reference.IsStruct) ? false
+            : Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
 
     /// <summary>Whether converting the proto/gRPC wire value for this field into its CLR value requires an explicit conversion.</summary>
     public static bool RequiresProtoToClrConversion(ProtoTypeReference reference) =>
-        reference.IsEnum || Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
+        (reference.IsMap || reference.IsStruct) ? false
+            : reference.IsEnum || Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
 
     /// <summary>Whether converting the CLR value for this field into its proto/gRPC wire value requires an explicit conversion.</summary>
     public static bool RequiresClrToProtoConversion(ProtoTypeReference reference) =>
-        reference.IsEnum || Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
+        (reference.IsMap || reference.IsStruct) ? false
+            : reference.IsEnum || Classify(UnwrapNullable(reference.ClrType)) != ScalarKind.None;
 
     /// <summary>
     /// Converts a single proto/gRPC scalar value (<paramref name="source"/>) into its CLR
