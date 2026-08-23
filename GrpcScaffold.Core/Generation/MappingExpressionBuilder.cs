@@ -233,10 +233,29 @@ internal static class MappingExpressionBuilder
                 : $"{source} is null ? new System.Collections.Generic.Dictionary<string, object?>() : {read}";
         }
 
-        // protobuf map
+        // protobuf map — project each value through its (now fully-mapped) value
+        // reference so scalar/enum/wrapper conversions are applied exactly like a field.
         if (reference.IsMap)
         {
-            return $"{source}.ToDictionary(x => x.Key, x => x.Value)";
+            var valueRef = reference.MapValueReference
+                ?? new ProtoTypeReference { ClrType = reference.ClrType, ProtoTypeName = "string", IsPrimitive = true };
+
+            const string kvp = "kvp";
+            var valueExpr = BuildProtoToClrExpression(
+                valueRef, $"{kvp}.Value", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride);
+
+            return $"{source}.ToDictionary({kvp} => {kvp}.Key, {kvp} => {valueExpr})";
+        }
+
+        if (reference.IsWrapper)
+        {
+            // A wrapper message's presence encodes the CLR value's nullability. On the wire a
+            // map entry is always present, so the wrapper is never null here; read straight
+            // through to its `value` field (applying any inner scalar/enum conversion).
+            var inner = reference.WrapperValueReference!;
+            return BuildProtoToClrExpression(
+                inner, $"{source}.Value", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride,
+                clrNullable: inner.IsNullable, destinationNullable: inner.IsNullable);
         }
 
         if (reference.IsMessage)
@@ -356,7 +375,29 @@ internal static class MappingExpressionBuilder
         }
         if (reference.IsMap)
         {
-            return $"{source}.ToMapField()";
+            var valueRef = reference.MapValueReference
+                ?? new ProtoTypeReference { ClrType = reference.ClrType, ProtoTypeName = "string", IsPrimitive = true };
+
+            const string kvp = "kvp";
+            var valueExpr = BuildClrToProtoExpression(
+                valueRef, $"{kvp}.Value", lookup, visiting, protoNamespace, clrNullable: valueRef.IsNullable);
+
+            // Nullable map values are wrapped in a generated message whose presence encodes
+            // null; a proto MapField cannot hold a null entry, so null CLR values are dropped.
+            return valueRef.IsWrapper
+                ? $"{source}.Where({kvp} => {kvp}.Value is not null).ToMapField({kvp} => {kvp}.Key, {kvp} => {valueExpr})"
+                : $"{source}.ToMapField({kvp} => {kvp}.Key, {kvp} => {valueExpr})";
+        }
+
+        if (reference.IsWrapper)
+        {
+            var inner = reference.WrapperValueReference!;
+            var innerExpr = BuildClrToProtoExpression(
+                inner, source, lookup, visiting, protoNamespace, clrNullable: inner.IsNullable);
+
+            return inner.IsNullable
+                ? $"{source} is null ? null : new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ Value = {innerExpr} }}"
+                : $"new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ Value = {innerExpr} }}";
         }
 
         if (reference.IsMessage)

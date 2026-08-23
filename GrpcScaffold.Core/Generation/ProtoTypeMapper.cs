@@ -1,4 +1,4 @@
-﻿// src/GrpcScaffold.Core/Generation/ProtoTypeMapper.cs
+// src/GrpcScaffold.Core/Generation/ProtoTypeMapper.cs
 using GrpcScaffold.Core.Analysis.Models;
 using Microsoft.CodeAnalysis;
 using System.Text;
@@ -78,7 +78,7 @@ public static class ProtoTypeMapper
             var keyType = dictionary.TypeArguments[0];
             var valueType = dictionary.TypeArguments[1];
 
-            // Dictionary<string, object> -> google.protobuf.Struct
+            // Dictionary<string, object?> -> google.protobuf.Struct
             if (keyType.SpecialType == SpecialType.System_String &&
                 valueType.SpecialType == SpecialType.System_Object)
             {
@@ -91,13 +91,57 @@ public static class ProtoTypeMapper
                 };
             }
 
+            // Run the key and value through the SAME mapping pipeline a field would use, so
+            // they get a proper proto type name (string / int32 / Timestamp / ...) and
+            // nullability tracking. Previously only the raw CLR symbol was stored and then
+            // `.ToDisplayString()`'d, which leaked `string?` into the generated .proto as
+            // `map<string, string?>` — invalid protobuf syntax.
+            var keyReference = Map(keyType);
+            var valueReference = Map(valueType);
+
+            // Map() only tracks Nullable<T>; capture reference-type nullability (string?)
+            // so a nullable map value is never silently collapsed to the non-null proto type.
+            if (keyType.NullableAnnotation == NullableAnnotation.Annotated && !keyReference.IsNullable)
+                keyReference = keyReference with { IsNullable = true };
+            if (valueType.NullableAnnotation == NullableAnnotation.Annotated && !valueReference.IsNullable)
+                valueReference = valueReference with { IsNullable = true };
+
+            // A proto3 map value cannot carry nullability on its own (no `optional` for map
+            // values, and scalar/enum values have no presence bit). A nullable map value
+            // would therefore lose its null/presence semantic unless we wrap it in a message
+            // whose presence encodes the null. Message-backed values (Timestamp, nested
+            // messages, Struct) already preserve presence, so they need no wrapper.
+            var valueNeedsWrapper = valueReference.IsNullable
+                && !valueReference.IsMessage
+                && !valueReference.IsStruct
+                && !valueReference.IsWellKnownType
+                && !valueReference.IsRepeated;
+
+            if (valueNeedsWrapper)
+            {
+                var wrapperName = "Nullable" + SanitizeWrapperName(valueReference.ProtoTypeName);
+
+                valueReference = new ProtoTypeReference
+                {
+                    ClrType = valueReference.ClrType,
+                    ProtoTypeName = wrapperName,
+                    IsMessage = true,
+                    IsWrapper = true,
+                    IsNullable = true,
+                    WrapperValueReference = valueReference
+                };
+            }
+
             return new ProtoTypeReference
             {
                 ClrType = type,
                 ProtoTypeName = "map",
                 IsMap = true,
                 MapKeyType = keyType,
-                MapValueType = valueType
+                MapValueType = valueType,
+                MapKeyReference = keyReference,
+                MapValueReference = valueReference,
+                MapValueIsWrapped = valueNeedsWrapper
             };
         }
         // Array
@@ -229,5 +273,23 @@ public static class ProtoTypeMapper
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Turns a proto type name into a PascalCase identifier fragment used to name the
+    /// generated nullable map-value wrapper (e.g. <c>string</c> -&gt; <c>String</c>,
+    /// <c>int32</c> -&gt; <c>Int32</c>, <c>google.protobuf.Timestamp</c> -&gt; <c>Timestamp</c>),
+    /// so the wrapper message becomes e.g. <c>NullableString</c> / <c>NullableInt32</c>.
+    /// </summary>
+    private static string SanitizeWrapperName(string protoTypeName)
+    {
+        var local = protoTypeName.Contains('.', StringComparison.Ordinal)
+            ? protoTypeName[(protoTypeName.LastIndexOf('.') + 1)..]
+            : protoTypeName;
+
+        if (local.Length == 0)
+            return "Value";
+
+        return char.ToUpperInvariant(local[0]) + local[1..];
     }
 }
