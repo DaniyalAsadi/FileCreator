@@ -385,7 +385,7 @@ public partial class FileCreatorForm : Window
         if (string.IsNullOrWhiteSpace(solutionPath) || !File.Exists(solutionPath))
             throw new InvalidOperationException("Solution path is not configured.");
 
-        var srcPath = Path.Combine(Directory.GetParent(_slnPath)?.FullName!, _solutionName, _projectName, "src");
+        var srcPath = Directory.GetParent(_context.Paths.WebBasePath)?.ToString() ?? throw new ArgumentNullException();
 
         var csFiles = Directory
             .GetFiles(srcPath, "*.cs", SearchOption.AllDirectories)
@@ -507,7 +507,7 @@ public partial class FileCreatorForm : Window
 
     private void SetDefaultValue()
     {
-        cmbProjectName.SelectedIndex = 0;
+        cmbProjectName.SelectedIndex = 4;
         txtUseCaseGroup.Text = "ErrorLog";
         txtUseCaseName.Text = "Create";
         txtRoute.Text = "error-logs";

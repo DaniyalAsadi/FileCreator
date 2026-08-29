@@ -136,14 +136,17 @@ public sealed class ContractGenerator
         sb.AppendLine("//   Safe to regenerate.");
         sb.AppendLine("// </auto-generated>");
         sb.AppendLine();
+        sb.Append("#nullable enable");
+        sb.AppendLine();
         sb.Append("namespace ").Append(ns).AppendLine(";");
         sb.AppendLine();
         sb.Append("public sealed record ").Append(contract.Name).AppendLine();
         sb.AppendLine("{");
 
-        foreach (var property in namedType.GetMembers().OfType<IPropertySymbol>()
-                     .Where(static p => p is { IsStatic: false, DeclaredAccessibility: Accessibility.Public } && p.GetMethod is not null)
-                     .OrderBy(p => p.Name, StringComparer.Ordinal))
+        foreach (var property in GetAllProperties(namedType)
+    .GroupBy(p => p.Name, StringComparer.Ordinal)
+    .Select(g => g.First())
+    .OrderBy(p => p.Name, StringComparer.Ordinal))
         {
             sb.Append("    public ")
                 .Append(ToContractType(property.Type, ns))
@@ -223,5 +226,34 @@ public sealed class ContractGenerator
             return "[]";
 
         return "default!";
+    }
+    private static IEnumerable<IPropertySymbol> GetAllProperties(INamedTypeSymbol type)
+    {
+        var types = new Stack<INamedTypeSymbol>();
+
+        for (var current = type;
+             current is not null;
+             current = current.BaseType)
+        {
+            types.Push(current);
+        }
+
+        while (types.Count > 0)
+        {
+            var current = types.Pop();
+
+            foreach (var property in current.GetMembers()
+                         .OfType<IPropertySymbol>()
+                         .Where(static p =>
+                             p is
+                             {
+                                 IsStatic: false,
+                                 DeclaredAccessibility: Accessibility.Public,
+                                 GetMethod: not null
+                             }))
+            {
+                yield return property;
+            }
+        }
     }
 }
