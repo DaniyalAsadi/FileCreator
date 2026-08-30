@@ -11,6 +11,11 @@ public sealed class ProtoGenerator(TemplateEngine templates)
     IReadOnlyList<EndpointModel> endpoints,
     string csharpNamespace)
     {
+        ArgumentNullException.ThrowIfNull(endpoints);
+        if (endpoints.Count == 0)
+            throw new ArgumentException("At least one endpoint is required.", nameof(endpoints));
+        ArgumentException.ThrowIfNullOrWhiteSpace(csharpNamespace);
+
         var first = endpoints[0];
 
         var imports = BuildImports(endpoints);
@@ -83,6 +88,23 @@ public sealed class ProtoGenerator(TemplateEngine templates)
         if (reference.IsStruct)
         {
             imports.Add("google/protobuf/struct.proto");
+        }
+
+        if (reference.ElementType is not null)
+        {
+            Scan(reference.ElementType, imports);
+        }
+        if (reference.MapKeyReference is not null)
+        {
+            Scan(reference.MapKeyReference, imports);
+        }
+        if (reference.MapValueReference is not null)
+        {
+            Scan(reference.MapValueReference, imports);
+        }
+        if (reference.WrapperValueReference is not null)
+        {
+            Scan(reference.WrapperValueReference, imports);
         }
         foreach (var arg in reference.GenericArguments)
         {
@@ -346,7 +368,9 @@ public sealed class ProtoGenerator(TemplateEngine templates)
                 ["proto_type_name"] = inner.ProtoTypeName,
                 ["field_number"] = 1,
                 ["is_repeated"] = false,
-                ["is_nullable"] = false,
+                // A map entry is always present, so the wrapper message preserves a null CLR
+                // value by leaving this optional scalar unset (HasValue == false).
+                ["is_nullable"] = true,
                 ["is_map"] = false,
                 ["is_struct"] = false,
                 ["map_key_type"] = null,

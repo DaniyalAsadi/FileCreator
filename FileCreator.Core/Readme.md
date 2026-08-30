@@ -1,64 +1,35 @@
-﻿# نحوه‌ی ادغام در FileCreator.Core
+# FileCreator.Core integration
 
-## 1) csproj
+`FileCreator.Core` is the generic generation layer. It contains:
 
-به `FileCreator.Core.csproj` این‌ها را اضافه کنید:
+- immutable template models and naming/model factories;
+- embedded Scriban templates;
+- `ScribanCodeGenerator<TModel>` and generator resolution;
+- Roslyn syntax validation and deterministic formatting;
+- `GeneratedFile`, structured diagnostics, and `GeneratedFileWriter`.
 
-```xml
-<ItemGroup>
-  <PackageReference Include="Scriban" Version="7.2.5" />
-  <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
-</ItemGroup>
-
-<ItemGroup>
-  <EmbeddedResource Include="Templates\*.sbn" />
-</ItemGroup>
-```
-
-(`Microsoft.CodeAnalysis.CSharp` و `Microsoft.CodeAnalysis.CSharp.Workspaces` را از قبل دارید —
-همان‌ها برای `RoslynCodeFormatter` کافی‌اند؛ دیگر نیازی به `SyntaxFactory` نیست.)
-
-## 2) استفاده (مثال جایگزین EndpointGenerator قدیمی)
+Register the canonical pipeline once at the application boundary:
 
 ```csharp
-var services = new ServiceCollection().AddScribanCodeGeneration().BuildServiceProvider();
-var generator = services.GetRequiredService<EndpointGenerator>();
-
-var model = EndpointTemplateModelFactory.Create(
-    projectName: "AuthorizationManager",
-    useCaseNamespace: usecaseNamespace,
-    webNamespace: webNamespace,
-    group: groupName.Resource,
-    useCaseName: "CreateUser",
-    requestType: RequestType.Command,
-    httpVerb: HttpVerb.POST,
-    hasRequest: true,
-    hasResponse: true,
-    responseType: ResponseType.Single);
-
-string endpointCs = await generator.GenerateAsync(model);
-// endpointCs جایگزین خروجی EndpointGenerator.Generate(...).NormalizeWhitespace().ToFullString() قدیمی می‌شود
+services.AddScribanCodeGeneration();
+services.AddSingleton<GeneratedFileWriter>();
 ```
 
-`RoslynFileCreator` تغییری در بقیه‌ی pipeline نیاز ندارد — همان `GeneratedFile(path, content)` را دریافت
-می‌کند، فقط `content` حالا حاصل Scriban Render + Roslyn Format است، نه AST.
+The WPF host creates a normalized `FileCreatorGenerationRequest`, asks
+`FileCreatorGenerator` for an in-memory, path-sorted collection of `GeneratedFile`
+artifacts, previews them through the Roslyn workspace, and only then calls the
+output writer. Generators never create directories or write files.
 
-## 3) افزودن Generator جدید (مثلاً ResponseGenerator)
+## Add a generator
 
-سه قدم، همیشه همین سه قدم:
+1. Add an immutable model implementing `IGeneratorModel` and a focused model factory.
+2. Add an embedded `.sbn` template beginning with the FileCreator generated header.
+3. Derive a concrete generator from `ScribanCodeGenerator<TModel>`.
+4. Add the artifact to orchestration and cover its text, path, and two-run determinism.
 
-1. `Models/ResponseTemplateModel.cs` + `ResponseTemplateModelFactory` (فقط منطق نام‌گذاری)
-2. `Templates/response.sbn`
-3.
-   ```csharp
-   public sealed class ResponseGenerator(IScribanTemplateRenderer renderer)
-       : ScribanCodeGenerator<ResponseTemplateModel>(renderer)
-   {
-       protected override string TemplateName => "response.sbn";
-   }
-   ```
-   و یک خط در `ServiceCollectionExtensions`.
+Concrete `ICodeGenerator` implementations are discovered by
+`AddScribanCodeGeneration`; no manual registration line or second resolver is needed.
+Do not reintroduce the removed syntax-factory `Generators/V1` pipeline.
 
-همین الگو دقیقاً برای `MapperGenerator`, `ValidatorGenerator`, `HandlerGenerator`,
-`ProtoGenerator` (که `GrpcScaffold.Core` از قبل به شکل مشابه دارد) و بقیه صدق می‌کند —
-هیچ‌کدام دیگر نیازی به `SyntaxFactory` ندارند.
+The full architecture and output policies are documented in the ECommerce mdBook under
+`Documents/src/file-creator/`.

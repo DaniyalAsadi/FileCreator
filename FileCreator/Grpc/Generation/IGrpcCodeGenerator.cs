@@ -7,6 +7,8 @@ using System.IO;
 using System.Text;
 using static System.Net.WebRequestMethods;
 
+using FileCreator.Core.Generation;
+
 namespace FileCreator.Grpc.Generation;
 
 public interface IGrpcCodeGenerator
@@ -32,6 +34,9 @@ public sealed class GrpcCodeGenerator(
         string serviceName,
         IReadOnlyList<EndpointModel> endpoints)
     {
+        var orderedEndpoints = endpoints
+            .OrderBy(endpoint => endpoint.EndpointClassName, StringComparer.Ordinal)
+            .ToList();
         var baseWebNameSpace = $"{context.ProjectName}.Web";
         var baseBffNameSpace = "Presentation.Bff";
         return
@@ -39,13 +44,13 @@ public sealed class GrpcCodeGenerator(
             new GeneratedFile(
                 context.Paths.WebBasePath,
                 Path.Combine("Grpc", "Protos", $"{serviceName}.proto"),
-                protoGenerator.Generate(endpoints, $"{baseWebNameSpace}.Grpc.Protos.{serviceName}")),
+                protoGenerator.Generate(orderedEndpoints, $"{baseWebNameSpace}.Grpc.Protos.{serviceName}")),
 
             new GeneratedFile(
                 context.Paths.WebBasePath,
                 Path.Combine("Grpc","Services",$"{serviceName}GrpcService.cs"),
-                Content: serviceGenerator.Generate(
-                    endpoints,
+                content: serviceGenerator.Generate(
+                    orderedEndpoints,
                     serviceNameSpace: $"{baseWebNameSpace}.Grpc.Services",
                     protoNameSpace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}",
                     mapperNameSpace: $"{baseWebNameSpace}.Grpc.Mappings.The{serviceName}")),
@@ -54,7 +59,7 @@ public sealed class GrpcCodeGenerator(
                 context.Paths.BffBasePath,
                 Path.Combine("Grpc",$"The{serviceName}","Services",$"{serviceName}GrpcService.cs"),
                 clientGenerator.Generate(
-                    endpoints,
+                    orderedEndpoints,
                     clientNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Services",
                     protoNamespace: $"{baseWebNameSpace}.Grpc.Protos.{serviceName}",
                     mappingNamespace: $"{baseBffNameSpace}.Grpc.The{serviceName}.Mappings",

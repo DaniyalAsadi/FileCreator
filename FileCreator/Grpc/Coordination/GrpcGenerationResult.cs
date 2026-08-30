@@ -10,6 +10,8 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Text;
 
+using FileCreator.Core.Generation;
+
 namespace FileCreator.Grpc.Coordination;
 
 public sealed record GrpcGenerationResult(
@@ -29,6 +31,9 @@ public sealed class GrpcGenerationCoordinator(
         if (validationErrors.Count > 0)
             throw new InvalidOperationException(string.Join(Environment.NewLine, validationErrors));
 
+        ValidateOutputPath(context.Paths.WebBasePath, "WebBasePath");
+        ValidateOutputPath(context.Paths.BffBasePath, "BffBasePath");
+
 
         ImmutableArray<EndpointModel> endpoints = await discovery.DiscoverAsync(options);
 
@@ -46,6 +51,19 @@ public sealed class GrpcGenerationCoordinator(
         IReadOnlyList<GeneratedFile> files = previewGenerator.Generate(endpoints, options);
 
         return new GrpcGenerationResult(endpoints, files, options);
+    }
+
+    private static void ValidateOutputPath(string path, string name)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+            return;
+
+        throw new GenerationException(new GenerationDiagnostic(
+            GenerationDiagnosticSeverity.Error,
+            "GRPC1001",
+            $"The gRPC output path '{name}' is not configured.",
+            Source: name,
+            SuggestedFix: "Configure the project paths before preparing a gRPC generation run."));
     }
 
     public IReadOnlyList<WriteResult> Commit(GrpcGenerationResult result)

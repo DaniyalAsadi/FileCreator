@@ -1,0 +1,687 @@
+{
+  "FileCreator.Core/DependencyInjection/ServiceCollectionExtensions.cs": {
+    "mtime": 1785789604.2572188,
+    "ast_hash": "4b2f18eb2e231ab267900f10628cc645",
+    "semantic_hash": "4b2f18eb2e231ab267900f10628cc645"
+  },
+  "FileCreator.Core/FileCreator.Core.csproj": {
+    "mtime": 1787417876.3538604,
+    "ast_hash": "65fa28d49bff01842e72a49a5744c44e",
+    "semantic_hash": "65fa28d49bff01842e72a49a5744c44e"
+  },
+  "FileCreator.Core/Generators/ICodeGenerator.cs": {
+    "mtime": 1785785406.6559215,
+    "ast_hash": "39a69b2ffbd1c3f507851976329eb0f4",
+    "semantic_hash": "39a69b2ffbd1c3f507851976329eb0f4"
+  },
+  "FileCreator.Core/Generators/ICodeGeneratorResolver.cs": {
+    "mtime": 1785787384.268896,
+    "ast_hash": "8cec6bb76b054118739e286a59169f2d",
+    "semantic_hash": "8cec6bb76b054118739e286a59169f2d"
+  },
+  "FileCreator.Core/Generators/ScribanCodeGenerator.cs": {
+    "mtime": 1785785392.5241086,
+    "ast_hash": "fe837f32089be85028395bb073299382",
+    "semantic_hash": "fe837f32089be85028395bb073299382"
+  },
+  "FileCreator.Core/Generators/ScribanFileCreator.cs": {
+    "mtime": 1785785802.479636,
+    "ast_hash": "a010c1e6443a4465736178f28fb1b2bb",
+    "semantic_hash": "a010c1e6443a4465736178f28fb1b2bb"
+  },
+  "FileCreator.Core/Generators/V1/EndpointGenerator.cs": {
+    "mtime": 1787350076.048234,
+    "ast_hash": "e14ba233269805e8aec1b98948ab9f26",
+    "semantic_hash": "e14ba233269805e8aec1b98948ab9f26"
+  },
+  "FileCreator.Core/Generators/V1/EndpointRequestGenerator.cs": {
+    "mtime": 1787350076.0492718,
+    "ast_hash": "c9f2de1c8c4ec42adf28c2d25fe73d0c",
+    "semantic_hash": "c9f2de1c8c4ec42adf28c2d25fe73d0c"
+  },
+  "FileCreator.Core/Generators/V1/EndpointRequestValidatorGenerator.cs": {
+    "mtime": 1787350076.0492718,
+    "ast_hash": "413600f5951969c7ce665afae7a00213",
+    "semantic_hash": "413600f5951969c7ce665afae7a00213"
+  },
+  "FileCreator.Core/Generators/V1/EndpointTestGenerator.cs": {
+    "mtime": 1787350076.0514188,
+    "ast_hash": "df9b1f1bed871ee0d1cb7699ff7c5ab4",
+    "semantic_hash": "df9b1f1bed871ee0d1cb7699ff7c5ab4"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestFiltersGenerator.cs": {
+    "mtime": 1787350076.0524771,
+    "ast_hash": "9c4d53124a4d467f1a8064dd763e7105",
+    "semantic_hash": "9c4d53124a4d467f1a8064dd763e7105"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestGenerator.cs": {
+    "mtime": 1787350076.0524771,
+    "ast_hash": "ecbe36ea29fbb879c74efd967545ec5e",
+    "semantic_hash": "ecbe36ea29fbb879c74efd967545ec5e"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestHandlerGenerator.cs": {
+    "mtime": 1787350076.0524771,
+    "ast_hash": "a1040c630c7ef863a3375eda28f9e33a",
+    "semantic_hash": "a1040c630c7ef863a3375eda28f9e33a"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestHandlerTestGenerator.cs": {
+    "mtime": 1787350076.0580757,
+    "ast_hash": "e880235f97c1e500b686dc55e8cde9f1",
+    "semantic_hash": "e880235f97c1e500b686dc55e8cde9f1"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestResponseGenerator.cs": {
+    "mtime": 1787350076.0600893,
+    "ast_hash": "d2c8e4f0291c58ecbf22201c5ab2c71c",
+    "semantic_hash": "d2c8e4f0291c58ecbf22201c5ab2c71c"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestServiceGenerator.cs": {
+    "mtime": 1787350076.0600893,
+    "ast_hash": "753bbde9007b1e33c2e31bd96a1506fa",
+    "semantic_hash": "753bbde9007b1e33c2e31bd96a1506fa"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestServiceImplementationGenerator.cs": {
+    "mtime": 1787350076.062098,
+    "ast_hash": "0e46da25479bfa60a9e3eb3679565260",
+    "semantic_hash": "0e46da25479bfa60a9e3eb3679565260"
+  },
+  "FileCreator.Core/Generators/V1/MediatorRequestSpecificationGenerator.cs": {
+    "mtime": 1787350076.062098,
+    "ast_hash": "0bc160330cc2a129f9c9617bcee1d957",
+    "semantic_hash": "0bc160330cc2a129f9c9617bcee1d957"
+  },
+  "FileCreator.Core/GlobalUsings.cs": {
+    "mtime": 1785784497.2843843,
+    "ast_hash": "c0383a79c301bede62279578a6486969",
+    "semantic_hash": "c0383a79c301bede62279578a6486969"
+  },
+  "FileCreator.Core/GroupName.cs": {
+    "mtime": 1771589494.6795623,
+    "ast_hash": "98176dfbacbca2b888758c07462c4d0e",
+    "semantic_hash": "98176dfbacbca2b888758c07462c4d0e"
+  },
+  "FileCreator.Core/Helpers/ApiDescriptionSourceParser.cs": {
+    "mtime": 1771589494.7615266,
+    "ast_hash": "c93a4c7794b44f553e439e4d48f47ec1",
+    "semantic_hash": "c93a4c7794b44f553e439e4d48f47ec1"
+  },
+  "FileCreator.Core/Helpers/Chain.cs": {
+    "mtime": 1771589494.7129717,
+    "ast_hash": "271902d793f3bf4f1e7247a2c40b59e7",
+    "semantic_hash": "271902d793f3bf4f1e7247a2c40b59e7"
+  },
+  "FileCreator.Core/Helpers/ImportedEndpoint.cs": {
+    "mtime": 1771589494.7442935,
+    "ast_hash": "9860c4c2ce72b0e04537c1076ed31cd5",
+    "semantic_hash": "9860c4c2ce72b0e04537c1076ed31cd5"
+  },
+  "FileCreator.Core/Helpers/RoslynHelpers.cs": {
+    "mtime": 1771589494.7292993,
+    "ast_hash": "ed4b55b76f354219517d55bb051d77ba",
+    "semantic_hash": "ed4b55b76f354219517d55bb051d77ba"
+  },
+  "FileCreator.Core/HttpVerb.cs": {
+    "mtime": 1771589494.6954603,
+    "ast_hash": "b13f1446d293c7ca6f92a8bc8bc846ba",
+    "semantic_hash": "b13f1446d293c7ca6f92a8bc8bc846ba"
+  },
+  "FileCreator.Core/RequestType.cs": {
+    "mtime": 1771589494.6632912,
+    "ast_hash": "4ec143a4e4e53baf147440b0cd46c792",
+    "semantic_hash": "4ec143a4e4e53baf147440b0cd46c792"
+  },
+  "FileCreator.Core/ResponseType.cs": {
+    "mtime": 1771780717.0243495,
+    "ast_hash": "c532275036a5410357280b4be80e4ee4",
+    "semantic_hash": "c532275036a5410357280b4be80e4ee4"
+  },
+  "FileCreator.Core/Rewriter/ApiRoutesRewriter.cs": {
+    "mtime": 1785862524.851972,
+    "ast_hash": "2d6cea0a98bdc858329fd431397bbd56",
+    "semantic_hash": "2d6cea0a98bdc858329fd431397bbd56"
+  },
+  "FileCreator.Core/Rewriter/EnumRewriter.cs": {
+    "mtime": 1772356024.7838345,
+    "ast_hash": "dfcd0c551d5e49450de6910da6f091b7",
+    "semantic_hash": "dfcd0c551d5e49450de6910da6f091b7"
+  },
+  "FileCreator.Core/Rewriter/ResxUpdater.cs": {
+    "mtime": 1773936283.9448793,
+    "ast_hash": "74b80a927e1fb992002d702b6e9f39c3",
+    "semantic_hash": "74b80a927e1fb992002d702b6e9f39c3"
+  },
+  "FileCreator.Core/Templates/Factories/EndpointRequestTemplateModelFactory.cs": {
+    "mtime": 1785793307.849622,
+    "ast_hash": "0118f4a626062338080bf7c5208b6880",
+    "semantic_hash": "0118f4a626062338080bf7c5208b6880"
+  },
+  "FileCreator.Core/Templates/Factories/EndpointRequestValidatorTemplateModelFactory.cs": {
+    "mtime": 1785776513.542775,
+    "ast_hash": "28f6a175326df01ad3ff6de516c9d861",
+    "semantic_hash": "28f6a175326df01ad3ff6de516c9d861"
+  },
+  "FileCreator.Core/Templates/Factories/EndpointTemplateModelFactory.cs": {
+    "mtime": 1785793307.8358727,
+    "ast_hash": "2c3df4e360f3166f88100408ad56d780",
+    "semantic_hash": "2c3df4e360f3166f88100408ad56d780"
+  },
+  "FileCreator.Core/Templates/Factories/EndpointTestTemplateModelFactory.cs": {
+    "mtime": 1785775184.885394,
+    "ast_hash": "8c4eaf936a1ea795f34317632dfc9886",
+    "semantic_hash": "8c4eaf936a1ea795f34317632dfc9886"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestFiltersTemplateModelFactory.cs": {
+    "mtime": 1785786551.827629,
+    "ast_hash": "1d83b9f59c29b76c4a4615a808fa855a",
+    "semantic_hash": "1d83b9f59c29b76c4a4615a808fa855a"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestHandlerTemplateModelFactory.cs": {
+    "mtime": 1785787350.3307972,
+    "ast_hash": "5821e75bb65e4d74d520edb75b6c5984",
+    "semantic_hash": "5821e75bb65e4d74d520edb75b6c5984"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestHandlerTestTemplateModelFactory.cs": {
+    "mtime": 1785793700.452674,
+    "ast_hash": "4254aa8a78edbd841b38e0e144bfe550",
+    "semantic_hash": "4254aa8a78edbd841b38e0e144bfe550"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestResponseTemplateModelFactory.cs": {
+    "mtime": 1785787990.536487,
+    "ast_hash": "ecaee8f96affaac195f79e48e5cecf3b",
+    "semantic_hash": "ecaee8f96affaac195f79e48e5cecf3b"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestServiceImplementationTemplateModelFactory.cs": {
+    "mtime": 1785847230.797007,
+    "ast_hash": "4a04cb914646c7690d5f2d2d5ea18a6c",
+    "semantic_hash": "4a04cb914646c7690d5f2d2d5ea18a6c"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestServiceTemplateModelFactory.cs": {
+    "mtime": 1785788091.3092139,
+    "ast_hash": "742c2a58fef8f761178e5737219554d7",
+    "semantic_hash": "742c2a58fef8f761178e5737219554d7"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestSpecificationTemplateModelFactory.cs": {
+    "mtime": 1785787984.267977,
+    "ast_hash": "bf7133f04cf1488c182bfa99c06d909b",
+    "semantic_hash": "bf7133f04cf1488c182bfa99c06d909b"
+  },
+  "FileCreator.Core/Templates/Factories/MediatorRequestTemplateModelFactory.cs": {
+    "mtime": 1785786667.1357806,
+    "ast_hash": "6490773d0b47011bf5fd0b31a9f4a98c",
+    "semantic_hash": "6490773d0b47011bf5fd0b31a9f4a98c"
+  },
+  "FileCreator.Core/Templates/Generators/EndpointGenerator.cs": {
+    "mtime": 1785776513.581226,
+    "ast_hash": "34b74768ed8982627461ac34c0eddfa2",
+    "semantic_hash": "34b74768ed8982627461ac34c0eddfa2"
+  },
+  "FileCreator.Core/Templates/Generators/EndpointRequestGenerator.cs": {
+    "mtime": 1785776513.587672,
+    "ast_hash": "4f81e06a7355c0ae2299431d67c961ab",
+    "semantic_hash": "4f81e06a7355c0ae2299431d67c961ab"
+  },
+  "FileCreator.Core/Templates/Generators/EndpointRequestValidatorGenerator.cs": {
+    "mtime": 1785782951.5326335,
+    "ast_hash": "e167c7a0361cdf835c0d41a848592611",
+    "semantic_hash": "e167c7a0361cdf835c0d41a848592611"
+  },
+  "FileCreator.Core/Templates/Generators/EndpointTestGenerator.cs": {
+    "mtime": 1785784552.0246732,
+    "ast_hash": "928ebc832e2d1878d4caa1e77dc19647",
+    "semantic_hash": "928ebc832e2d1878d4caa1e77dc19647"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestFiltersGenerator.cs": {
+    "mtime": 1785784799.3483646,
+    "ast_hash": "2cee772f48c9272957c486ab92c706a7",
+    "semantic_hash": "2cee772f48c9272957c486ab92c706a7"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestGenerator.cs": {
+    "mtime": 1785784799.5445898,
+    "ast_hash": "7ec27c562babab24e0e27201f013aff3",
+    "semantic_hash": "7ec27c562babab24e0e27201f013aff3"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestHandlerGenerator.cs": {
+    "mtime": 1785784799.030331,
+    "ast_hash": "76e841f04c161711f44b9175c2f4498c",
+    "semantic_hash": "76e841f04c161711f44b9175c2f4498c"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestHandlerTestGenerator.cs": {
+    "mtime": 1785784799.5535855,
+    "ast_hash": "4e1dfb6641add0e6d55b3153c5b8e2a9",
+    "semantic_hash": "4e1dfb6641add0e6d55b3153c5b8e2a9"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestResponseGenerator.cs": {
+    "mtime": 1785784799.53143,
+    "ast_hash": "d3ef78f688876ad7bc0c10af0918c57d",
+    "semantic_hash": "d3ef78f688876ad7bc0c10af0918c57d"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestServiceGenerator.cs": {
+    "mtime": 1785784799.5213494,
+    "ast_hash": "65060f8f7150de0f3e9fdcba90f5dcae",
+    "semantic_hash": "65060f8f7150de0f3e9fdcba90f5dcae"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestServiceImplementationGenerator.cs": {
+    "mtime": 1785784799.5091248,
+    "ast_hash": "f52017d1a4126bd367f2bc91f68cc2e3",
+    "semantic_hash": "f52017d1a4126bd367f2bc91f68cc2e3"
+  },
+  "FileCreator.Core/Templates/Generators/MediatorRequestSpecificationGenerator.cs": {
+    "mtime": 1785784799.4936337,
+    "ast_hash": "8e9a48bcaf37f8e9f6e6f1da6fe328e8",
+    "semantic_hash": "8e9a48bcaf37f8e9f6e6f1da6fe328e8"
+  },
+  "FileCreator.Core/Templates/Models/EndpointRequestTemplateModel.cs": {
+    "mtime": 1785792897.5942223,
+    "ast_hash": "8e50275537cdf79b7bb0a9be23d5583e",
+    "semantic_hash": "8e50275537cdf79b7bb0a9be23d5583e"
+  },
+  "FileCreator.Core/Templates/Models/EndpointRequestValidatorTemplateModel.cs": {
+    "mtime": 1785784551.9929287,
+    "ast_hash": "3e2aaf5ff00755b9ea1753950ad76bee",
+    "semantic_hash": "3e2aaf5ff00755b9ea1753950ad76bee"
+  },
+  "FileCreator.Core/Templates/Models/EndpointTemplateModel.cs": {
+    "mtime": 1785784551.982795,
+    "ast_hash": "f7cb21239d1be4e265dee1f510f26b77",
+    "semantic_hash": "f7cb21239d1be4e265dee1f510f26b77"
+  },
+  "FileCreator.Core/Templates/Models/EndpointTestTemplateModel.cs": {
+    "mtime": 1785784551.973153,
+    "ast_hash": "d4d289c5683ac26d90024b2b43ff16e9",
+    "semantic_hash": "d4d289c5683ac26d90024b2b43ff16e9"
+  },
+  "FileCreator.Core/Templates/Models/IGeneratorModel.cs": {
+    "mtime": 1785784552.0021114,
+    "ast_hash": "841f749aee3ac131cae92119b38839a3",
+    "semantic_hash": "841f749aee3ac131cae92119b38839a3"
+  },
+  "FileCreator.Core/Templates/Models/Internals/MediatorPropertyTemplateModel.cs": {
+    "mtime": 1785782790.173251,
+    "ast_hash": "8db181174fec445e3334bb4e4c4110f0",
+    "semantic_hash": "8db181174fec445e3334bb4e4c4110f0"
+  },
+  "FileCreator.Core/Templates/Models/Internals/MethodParameterTemplateModel.cs": {
+    "mtime": 1785782790.1612427,
+    "ast_hash": "9e37ad556ee4e16b3982e81cad0231ed",
+    "semantic_hash": "9e37ad556ee4e16b3982e81cad0231ed"
+  },
+  "FileCreator.Core/Templates/Models/Internals/PropertyTemplateModel.cs": {
+    "mtime": 1785782789.8607821,
+    "ast_hash": "13892541c7fceba82484d498b70b6414",
+    "semantic_hash": "13892541c7fceba82484d498b70b6414"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestFiltersTemplateModel.cs": {
+    "mtime": 1785784551.9646902,
+    "ast_hash": "28d83c7499d6f37571439f864519369a",
+    "semantic_hash": "28d83c7499d6f37571439f864519369a"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestHandlerTemplateModel.cs": {
+    "mtime": 1785784551.9545524,
+    "ast_hash": "5ca372fe10047387867284f836b7744b",
+    "semantic_hash": "5ca372fe10047387867284f836b7744b"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestHandlerTestTemplateModel.cs": {
+    "mtime": 1785784552.357464,
+    "ast_hash": "f07513a3ed562ae4752aba2b649eba36",
+    "semantic_hash": "f07513a3ed562ae4752aba2b649eba36"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestResponseTemplateModel.cs": {
+    "mtime": 1785784551.943021,
+    "ast_hash": "eab83e0055f4c778714fd969bf4afe37",
+    "semantic_hash": "eab83e0055f4c778714fd969bf4afe37"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestServiceImplementationTemplateModel.cs": {
+    "mtime": 1785784551.9317122,
+    "ast_hash": "0b220c0737fe765e4a1cd1dddefa4979",
+    "semantic_hash": "0b220c0737fe765e4a1cd1dddefa4979"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestServiceTemplateModel.cs": {
+    "mtime": 1785784551.918048,
+    "ast_hash": "2c1ce09b47bfb3db232f514c91df6aac",
+    "semantic_hash": "2c1ce09b47bfb3db232f514c91df6aac"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestSpecificationTemplateModel.cs": {
+    "mtime": 1785784551.9082649,
+    "ast_hash": "7aca64d7e1cf12bb3c80456b0164af04",
+    "semantic_hash": "7aca64d7e1cf12bb3c80456b0164af04"
+  },
+  "FileCreator.Core/Templates/Models/MediatorRequestTemplateModel.cs": {
+    "mtime": 1785784551.8955503,
+    "ast_hash": "73992b14674e0deee6d9e8d2716132df",
+    "semantic_hash": "73992b14674e0deee6d9e8d2716132df"
+  },
+  "FileCreator.Core/Templating/EmbeddedResourceTemplateSource.cs": {
+    "mtime": 1785699331.8678038,
+    "ast_hash": "6eb0c44fccfdd000504819e3f6a412c6",
+    "semantic_hash": "6eb0c44fccfdd000504819e3f6a412c6"
+  },
+  "FileCreator.Core/Templating/IScribanTemplateRenderer.cs": {
+    "mtime": 1785699331.851668,
+    "ast_hash": "197877fdf75f0bd3873a7933e57b8a40",
+    "semantic_hash": "197877fdf75f0bd3873a7933e57b8a40"
+  },
+  "FileCreator.Core/Templating/IScribanTemplateSource.cs": {
+    "mtime": 1785699331.8818333,
+    "ast_hash": "c6374dafcb866b84be2ba20f7f1f5f66",
+    "semantic_hash": "c6374dafcb866b84be2ba20f7f1f5f66"
+  },
+  "FileCreator.Core/Templating/RoslynCodeFormatter.cs": {
+    "mtime": 1785697884.1431527,
+    "ast_hash": "1a77360a4f6587ddc86ef66b2abf01c3",
+    "semantic_hash": "1a77360a4f6587ddc86ef66b2abf01c3"
+  },
+  "FileCreator.Core/Templating/ScribanTemplateRenderer.cs": {
+    "mtime": 1785699331.8402278,
+    "ast_hash": "4732be8c41dc48475cdc5d0290cf1fb1",
+    "semantic_hash": "4732be8c41dc48475cdc5d0290cf1fb1"
+  },
+  "FileCreator.Core/Walker/EnumKeyCollector.cs": {
+    "mtime": 1772122851.921585,
+    "ast_hash": "fa24b2996b6d83f651df6dbf88026a8b",
+    "semantic_hash": "fa24b2996b6d83f651df6dbf88026a8b"
+  },
+  "FileCreator.Test/EndpointGeneratorTests.cs": {
+    "mtime": 1787498964.2666857,
+    "ast_hash": "af306d5ce0f40c97f380d69f03fe85dd",
+    "semantic_hash": "af306d5ce0f40c97f380d69f03fe85dd"
+  },
+  "FileCreator.Test/EndpointRequestGeneratorTests.cs": {
+    "mtime": 1787433391.752695,
+    "ast_hash": "80ffd99808ce3b2961bed8ab729321fa",
+    "semantic_hash": "80ffd99808ce3b2961bed8ab729321fa"
+  },
+  "FileCreator.Test/FileCreator.Test.csproj": {
+    "mtime": 1787417876.4382946,
+    "ast_hash": "dd8b4be82ff4edabebffb640793bb0ca",
+    "semantic_hash": "dd8b4be82ff4edabebffb640793bb0ca"
+  },
+  "FileCreator.Test/GrpcClientGenerationTests.cs": {
+    "mtime": 1787417876.4516168,
+    "ast_hash": "10b6f84c743bd726e6de172144db6352",
+    "semantic_hash": "10b6f84c743bd726e6de172144db6352"
+  },
+  "FileCreator.Test/MapNullableValueTests.cs": {
+    "mtime": 1787504867.3217149,
+    "ast_hash": "dafa8da75ceb57827088c54c4e5b152f",
+    "semantic_hash": "dafa8da75ceb57827088c54c4e5b152f"
+  },
+  "FileCreator.Test/MappingNullHandlingTests.cs": {
+    "mtime": 1787433371.7887688,
+    "ast_hash": "e7932130a28567f34a1639045c3fec1f",
+    "semantic_hash": "e7932130a28567f34a1639045c3fec1f"
+  },
+  "FileCreator.slnx": {
+    "mtime": 1787417876.4516168,
+    "ast_hash": "3d05edb78e3cfb0bd0f59de8e1fe285c",
+    "semantic_hash": "3d05edb78e3cfb0bd0f59de8e1fe285c"
+  },
+  "FileCreator/App.xaml.cs": {
+    "mtime": 1787350076.0649805,
+    "ast_hash": "12ab61c9de5f1701209a24798f60420a",
+    "semantic_hash": "12ab61c9de5f1701209a24798f60420a"
+  },
+  "FileCreator/FileCreator.csproj": {
+    "mtime": 1787350076.0649805,
+    "ast_hash": "156a271e3397ea451a1784c6da291b8a",
+    "semantic_hash": "156a271e3397ea451a1784c6da291b8a"
+  },
+  "FileCreator/FileCreatorForm.xaml.cs": {
+    "mtime": 1787776941.6298268,
+    "ast_hash": "d8cdb8593aac3e0502a4d068a2717391",
+    "semantic_hash": "d8cdb8593aac3e0502a4d068a2717391"
+  },
+  "FileCreator/FileCreatorService/RoslynFileCreator.cs": {
+    "mtime": 1787350076.06699,
+    "ast_hash": "6bb5bd6fe8e8c1787cf0ab8d7cf146dc",
+    "semantic_hash": "6bb5bd6fe8e8c1787cf0ab8d7cf146dc"
+  },
+  "FileCreator/GeneratedFile.cs": {
+    "mtime": 1787350076.06699,
+    "ast_hash": "8f6cd00ec633ef2133629c5119078506",
+    "semantic_hash": "8f6cd00ec633ef2133629c5119078506"
+  },
+  "FileCreator/GenerationContext.cs": {
+    "mtime": 1786703200.1447825,
+    "ast_hash": "232aab10fba15ebaa1e74c251b898952",
+    "semantic_hash": "232aab10fba15ebaa1e74c251b898952"
+  },
+  "FileCreator/GrpcGenerationForm.xaml.cs": {
+    "mtime": 1787350076.074049,
+    "ast_hash": "e55dd4bcfbdbe76f80b9189990eff193",
+    "semantic_hash": "e55dd4bcfbdbe76f80b9189990eff193"
+  },
+  "FileCreator/Grpc/Coordination/GrpcGenerationResult.cs": {
+    "mtime": 1787417876.4566395,
+    "ast_hash": "1b5249c108dc81e378cb0dff5682c109",
+    "semantic_hash": "1b5249c108dc81e378cb0dff5682c109"
+  },
+  "FileCreator/Grpc/DependencyInjection/GrpcServiceCollectionExtensions.cs": {
+    "mtime": 1786817313.304199,
+    "ast_hash": "193026fde901e0a2393f42acdb804e76",
+    "semantic_hash": "193026fde901e0a2393f42acdb804e76"
+  },
+  "FileCreator/Grpc/Discovery/EndpointFilter.cs": {
+    "mtime": 1786603392.351378,
+    "ast_hash": "bf6f3d46097e29d9c66accb8f7bb0319",
+    "semantic_hash": "bf6f3d46097e29d9c66accb8f7bb0319"
+  },
+  "FileCreator/Grpc/Discovery/IEndpointDiscoveryService.cs": {
+    "mtime": 1785876717.371199,
+    "ast_hash": "19b60f4a9896d7ec227e5fc4f8a54b50",
+    "semantic_hash": "19b60f4a9896d7ec227e5fc4f8a54b50"
+  },
+  "FileCreator/Grpc/Factories/GrpcAnalysisContextFactory.cs": {
+    "mtime": 1785875838.7195606,
+    "ast_hash": "ca6e2533fc58f68a212191d50a48acba",
+    "semantic_hash": "ca6e2533fc58f68a212191d50a48acba"
+  },
+  "FileCreator/Grpc/Generation/IGrpcCodeGenerator.cs": {
+    "mtime": 1787417876.4566395,
+    "ast_hash": "301bd2a82be98be6d89db7724ba894be",
+    "semantic_hash": "301bd2a82be98be6d89db7724ba894be"
+  },
+  "FileCreator/Grpc/Preview/IGrpcPreviewGenerator.cs": {
+    "mtime": 1786993937.9607186,
+    "ast_hash": "0a8ac45915b622dcfe8a95de109fad3b",
+    "semantic_hash": "0a8ac45915b622dcfe8a95de109fad3b"
+  },
+  "FileCreator/Grpc/ViewModels/EndpointSelectionItem.cs": {
+    "mtime": 1786995241.6913955,
+    "ast_hash": "1d7648125aabdf9e06ae67f9b1cf8ef5",
+    "semantic_hash": "1d7648125aabdf9e06ae67f9b1cf8ef5"
+  },
+  "FileCreator/Grpc/ViewModels/GrpcGenerationOptions.cs": {
+    "mtime": 1786984210.9071946,
+    "ast_hash": "e511cf4191791ccb5f3a8d9270a7e848",
+    "semantic_hash": "e511cf4191791ccb5f3a8d9270a7e848"
+  },
+  "FileCreator/Grpc/Writers/IGrpcFileWriter.cs": {
+    "mtime": 1787417876.4579625,
+    "ast_hash": "7249dc1acd33c45be49ec0377a8e0429",
+    "semantic_hash": "7249dc1acd33c45be49ec0377a8e0429"
+  },
+  "FileCreator/PreviewForm.xaml.cs": {
+    "mtime": 1787350076.074049,
+    "ast_hash": "e712de7629a54ac432085ae9fbffefe6",
+    "semantic_hash": "e712de7629a54ac432085ae9fbffefe6"
+  },
+  "FileCreator/PreviewWorkspace.cs": {
+    "mtime": 1787350076.0771778,
+    "ast_hash": "c63b7ed2f7493afa5f326663dfe1effc",
+    "semantic_hash": "c63b7ed2f7493afa5f326663dfe1effc"
+  },
+  "FileCreator/Properties/Settings.Designer.cs": {
+    "mtime": 1773481781.222221,
+    "ast_hash": "e72e7a7c7ccc240033d9d567a843712e",
+    "semantic_hash": "e72e7a7c7ccc240033d9d567a843712e"
+  },
+  "FileCreator/Services/ProjectPathsProvider.cs": {
+    "mtime": 1787350076.0771778,
+    "ast_hash": "2336d8f0189ff71e5b24951cd0f7a78a",
+    "semantic_hash": "2336d8f0189ff71e5b24951cd0f7a78a"
+  },
+  "FileCreator/SettingsForm.xaml.cs": {
+    "mtime": 1787350076.0799255,
+    "ast_hash": "ed796cb024cedee4ee67fff67b623c21",
+    "semantic_hash": "ed796cb024cedee4ee67fff67b623c21"
+  },
+  "FileCreator/WorkspaceCache.cs": {
+    "mtime": 1787350076.0821047,
+    "ast_hash": "2aacea19a5f0b9308597bd38c225e4cd",
+    "semantic_hash": "2aacea19a5f0b9308597bd38c225e4cd"
+  },
+  "GrpcScaffold.Core/Analysis/ApiDescriptionResolver.cs": {
+    "mtime": 1783664027.1797574,
+    "ast_hash": "91436a5ec6cc148fa9515122c253adda",
+    "semantic_hash": "91436a5ec6cc148fa9515122c253adda"
+  },
+  "GrpcScaffold.Core/Analysis/EndpointAnalyzer.cs": {
+    "mtime": 1786984479.882263,
+    "ast_hash": "66f15f0c52e9c193b1c7d2d2a242e469",
+    "semantic_hash": "66f15f0c52e9c193b1c7d2d2a242e469"
+  },
+  "GrpcScaffold.Core/Analysis/MediatorSendResolver.cs": {
+    "mtime": 1783664027.1807578,
+    "ast_hash": "f3f654ef78fe3fd3b9a4f7b663af20fb",
+    "semantic_hash": "f3f654ef78fe3fd3b9a4f7b663af20fb"
+  },
+  "GrpcScaffold.Core/Analysis/Models/ApiDescriptionInfo.cs": {
+    "mtime": 1783664027.1817577,
+    "ast_hash": "c49fb2c5b8cb9de963404a0c7001cd95",
+    "semantic_hash": "c49fb2c5b8cb9de963404a0c7001cd95"
+  },
+  "GrpcScaffold.Core/Analysis/Models/ConstructorParameterInfo.cs": {
+    "mtime": 1783872769.3923595,
+    "ast_hash": "ffbb3311e9a66df8cdb46bb0e0e2dcc7",
+    "semantic_hash": "ffbb3311e9a66df8cdb46bb0e0e2dcc7"
+  },
+  "GrpcScaffold.Core/Analysis/Models/ContractInfo.cs": {
+    "mtime": 1783871958.9911318,
+    "ast_hash": "504597d8ec26a04d9c766b00df26f77e",
+    "semantic_hash": "504597d8ec26a04d9c766b00df26f77e"
+  },
+  "GrpcScaffold.Core/Analysis/Models/EndpointModel.cs": {
+    "mtime": 1787087033.7140708,
+    "ast_hash": "dab86ee728e7b0b4478cfd0ed3d8d2c4",
+    "semantic_hash": "dab86ee728e7b0b4478cfd0ed3d8d2c4"
+  },
+  "GrpcScaffold.Core/Analysis/Models/FieldInfo.cs": {
+    "mtime": 1787504867.3257277,
+    "ast_hash": "b45758a86c63189fdbf8bb5f37b5e50f",
+    "semantic_hash": "b45758a86c63189fdbf8bb5f37b5e50f"
+  },
+  "GrpcScaffold.Core/Analysis/Models/ResponseMappingInfo.cs": {
+    "mtime": 1784054332.8521416,
+    "ast_hash": "0358c3a2f83c66821f51c791c7c6f8ea",
+    "semantic_hash": "0358c3a2f83c66821f51c791c7c6f8ea"
+  },
+  "GrpcScaffold.Core/Analysis/Models/RouteInfo.cs": {
+    "mtime": 1786984517.710358,
+    "ast_hash": "77f5d7c30d46252c335fd36a7fa47ade",
+    "semantic_hash": "77f5d7c30d46252c335fd36a7fa47ade"
+  },
+  "GrpcScaffold.Core/Analysis/VisibilityResolver.cs": {
+    "mtime": 1783664027.1839342,
+    "ast_hash": "2088c8e9e4582a58fe2942d61584908f",
+    "semantic_hash": "2088c8e9e4582a58fe2942d61584908f"
+  },
+  "GrpcScaffold.Core/Generation/ClientMappingGenerator.cs": {
+    "mtime": 1787433371.7887688,
+    "ast_hash": "aa95ee7d083b75be920472b826693184",
+    "semantic_hash": "aa95ee7d083b75be920472b826693184"
+  },
+  "GrpcScaffold.Core/Generation/ContractGenerator.cs": {
+    "mtime": 1787521988.1741025,
+    "ast_hash": "3e011becfde470aa5bd067e7e4544223",
+    "semantic_hash": "3e011becfde470aa5bd067e7e4544223"
+  },
+  "GrpcScaffold.Core/Generation/DiRegistrationGenerator.cs": {
+    "mtime": 1787417876.5083325,
+    "ast_hash": "cfdbe4d3bfeb189571fb43fe08e6efcd",
+    "semantic_hash": "cfdbe4d3bfeb189571fb43fe08e6efcd"
+  },
+  "GrpcScaffold.Core/Generation/GrpcClientGenerator.cs": {
+    "mtime": 1787417876.5141523,
+    "ast_hash": "1c5bb0af8e22af1bff22fccf5b19a4f8",
+    "semantic_hash": "1c5bb0af8e22af1bff22fccf5b19a4f8"
+  },
+  "GrpcScaffold.Core/Generation/GrpcServiceGenerator.cs": {
+    "mtime": 1787157440.457164,
+    "ast_hash": "acc884845bf20ef25f1de31e65d65431",
+    "semantic_hash": "acc884845bf20ef25f1de31e65d65431"
+  },
+  "GrpcScaffold.Core/Generation/MappingExpressionBuilder.cs": {
+    "mtime": 1787504867.3317635,
+    "ast_hash": "87ebcc22892b6c411900a62dbb987647",
+    "semantic_hash": "87ebcc22892b6c411900a62dbb987647"
+  },
+  "GrpcScaffold.Core/Generation/MappingGenerator.cs": {
+    "mtime": 1787433371.8089812,
+    "ast_hash": "17de64ab991abce34fa3699c667027d7",
+    "semantic_hash": "17de64ab991abce34fa3699c667027d7"
+  },
+  "GrpcScaffold.Core/Generation/NamingConventions.cs": {
+    "mtime": 1786815989.9081743,
+    "ast_hash": "c0d8308224f4cec8cc1e91fcfd803de0",
+    "semantic_hash": "c0d8308224f4cec8cc1e91fcfd803de0"
+  },
+  "GrpcScaffold.Core/Generation/ProtoGenerator.cs": {
+    "mtime": 1787504867.348423,
+    "ast_hash": "f67c26ddc294d9eb893eb36f739c44ba",
+    "semantic_hash": "f67c26ddc294d9eb893eb36f739c44ba"
+  },
+  "GrpcScaffold.Core/Generation/ProtoTypeConversion.cs": {
+    "mtime": 1787504867.348423,
+    "ast_hash": "54dd20b0e7e035e2f5ae9543e18ca257",
+    "semantic_hash": "54dd20b0e7e035e2f5ae9543e18ca257"
+  },
+  "GrpcScaffold.Core/Generation/ProtoTypeMapper.cs": {
+    "mtime": 1787504867.348423,
+    "ast_hash": "5a0206cd89386e672022a06995cb5615",
+    "semantic_hash": "5a0206cd89386e672022a06995cb5615"
+  },
+  "GrpcScaffold.Core/Generation/TemplateEngine.cs": {
+    "mtime": 1786906569.4732873,
+    "ast_hash": "bd0d990afbfb9796c61fe48177238605",
+    "semantic_hash": "bd0d990afbfb9796c61fe48177238605"
+  },
+  "GrpcScaffold.Core/GrpcScaffold.Core.csproj": {
+    "mtime": 1787417876.6531117,
+    "ast_hash": "3d127a14c4d97d8dcfddad4fdfd2e909",
+    "semantic_hash": "3d127a14c4d97d8dcfddad4fdfd2e909"
+  },
+  "GrpcScaffold.Core/IO/AnalysisContext.cs": {
+    "mtime": 1785862361.6697788,
+    "ast_hash": "73436b0df999a1711ceb84111bfce723",
+    "semantic_hash": "73436b0df999a1711ceb84111bfce723"
+  },
+  "GrpcScaffold.Core/IO/CsprojUpdater.cs": {
+    "mtime": 1787417876.665605,
+    "ast_hash": "0cd2f6d028334c81ddeec4de673a2701",
+    "semantic_hash": "0cd2f6d028334c81ddeec4de673a2701"
+  },
+  "GrpcScaffold.Core/IO/GenerationManifest.cs": {
+    "mtime": 1783664027.1889336,
+    "ast_hash": "db214c095dd252f2f80e5c77a9a40bf8",
+    "semantic_hash": "db214c095dd252f2f80e5c77a9a40bf8"
+  },
+  "GrpcScaffold.Core/IO/IdempotentFileWriter.cs": {
+    "mtime": 1785862051.9334054,
+    "ast_hash": "4bdc560eb8115501ff0d9fc757ab5dde",
+    "semantic_hash": "4bdc560eb8115501ff0d9fc757ab5dde"
+  },
+  "GrpcScaffold.Core/IO/RegionMerger.cs": {
+    "mtime": 1783664027.1899335,
+    "ast_hash": "25aeb74f5bea4b0f1518b7ef23d6d76d",
+    "semantic_hash": "25aeb74f5bea4b0f1518b7ef23d6d76d"
+  },
+  "FileCreator.Core/Readme.md": {
+    "mtime": 1785701998.744896,
+    "ast_hash": "0d588a9b9111dfea204061813f76e9da",
+    "semantic_hash": "0d588a9b9111dfea204061813f76e9da"
+  },
+  "grpc-mapping-null-review.md": {
+    "mtime": 1787433371.8153613,
+    "ast_hash": "9d1644d46b10c0d31fadf84e9d7b0cef",
+    "semantic_hash": "9d1644d46b10c0d31fadf84e9d7b0cef"
+  }
+}

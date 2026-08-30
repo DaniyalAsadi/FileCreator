@@ -3,9 +3,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using FileCreator.Core;
+using FileCreator.Core.Generation;
+using FileCreator.Core.Generators;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
-using FileCreator.FileCreatorService;
 using FileCreator.Services;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -22,19 +23,25 @@ public partial class FileCreatorForm : Window
     private PreviewWorkspace _workspace = default!;
     private readonly IServiceProvider _serviceProvider;
     private readonly IWorkspaceCache _cache;
-    private readonly IProjectPathsProvider _pathsProvider; // جدید
+    private readonly IProjectPathsProvider _pathsProvider;
     private readonly GenerationContext _context;
+    private readonly ScribanFileCreator _fileCreator;
+    private readonly GeneratedFileWriter _fileWriter;
 
     public FileCreatorForm(
         IServiceProvider serviceProvider,
         IProjectPathsProvider pathsProvider,
         IWorkspaceCache cache,
-        GenerationContext context)
+        GenerationContext context,
+        ScribanFileCreator fileCreator,
+        GeneratedFileWriter fileWriter)
     {
         _serviceProvider = serviceProvider;
         _cache = cache;
         _context = context;
         _pathsProvider = pathsProvider;
+        _fileCreator = fileCreator;
+        _fileWriter = fileWriter;
 
         InitializeComponent();
 
@@ -61,8 +68,14 @@ public partial class FileCreatorForm : Window
 
             await _workspace.WarmupAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            MessageBox.Show(
+                $"The solution workspace could not be loaded: {ex.Message}",
+                "Workspace Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
             var settings = _serviceProvider.GetRequiredService<SettingsForm>();
             settings.Owner = this;
 
@@ -201,20 +214,22 @@ public partial class FileCreatorForm : Window
             Mouse.OverrideCursor = Cursors.Wait;
 
             // 1️⃣ Generate Roslyn Files (memory only)
-            var generator = new RoslynFileCreator(
-                projectName: _projectName,
-                groupName: group,
-                usecaseName: useCaseName,
-                useCasePath: _context.Paths.UseCasesBasePath,
-                webPath: _context.Paths.WebBasePath,
-                functionalTestPath: _context.Paths.FunctionalTestsBasePath,
-                unitTestPath: _context.Paths.UnitTestsBasePath,
-                infrastructurePath: _context.Paths.InfrastructureBasePath,
-                hasRequest: hasRequest,
-                requestType: type,
-                hasResponse: hasResponse,
-                responseType: responseType,
-                httpVerb: httpVerb);
+            var request = new FileCreatorGenerationRequest(
+                ProjectName: _projectName,
+                GroupName: group,
+                UseCaseName: useCaseName,
+                UseCasesPath: _context.Paths.UseCasesBasePath,
+                WebPath: _context.Paths.WebBasePath,
+                FunctionalTestsPath: _context.Paths.FunctionalTestsBasePath,
+                UnitTestsPath: _context.Paths.UnitTestsBasePath,
+                InfrastructurePath: _context.Paths.InfrastructureBasePath,
+                HasRequest: hasRequest,
+                RequestType: type,
+                HasResponse: hasResponse,
+                ResponseType: responseType,
+                HttpVerb: httpVerb);
+
+            var generator = new FileCreatorGenerator(request, _fileCreator);
 
             var previewFiles = await generator.GeneratePreview();
 
@@ -229,7 +244,7 @@ public partial class FileCreatorForm : Window
                 return;
             }
             // 4️⃣ Write to Disk
-            RoslynFileCreator.WriteFiles(previewFiles);
+            _fileWriter.Write(previewFiles, GeneratedFileWritePolicy.CreateOnly);
 
             var apiRoutePath = FindApiRoutes(_context.Paths.SharedKernelToolsTestsBasePath);
             ApiRoutesUpdater.Update(

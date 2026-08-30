@@ -249,13 +249,14 @@ internal static class MappingExpressionBuilder
 
         if (reference.IsWrapper)
         {
-            // A wrapper message's presence encodes the CLR value's nullability. On the wire a
-            // map entry is always present, so the wrapper is never null here; read straight
-            // through to its `value` field (applying any inner scalar/enum conversion).
+            // The wrapper message is always present for a map entry. Its optional Value field
+            // carries nullability, so preserve an unset value as CLR null.
             var inner = reference.WrapperValueReference!;
             return BuildProtoToClrExpression(
                 inner, $"{source}.Value", lookup, visiting: visiting, clrNamespaceOverride: clrNamespaceOverride,
-                clrNullable: inner.IsNullable, destinationNullable: inner.IsNullable);
+                clrNullable: inner.IsNullable,
+                presenceSource: $"{source}.HasValue",
+                destinationNullable: true);
         }
 
         if (reference.IsMessage)
@@ -382,22 +383,26 @@ internal static class MappingExpressionBuilder
             var valueExpr = BuildClrToProtoExpression(
                 valueRef, $"{kvp}.Value", lookup, visiting, protoNamespace, clrNullable: valueRef.IsNullable);
 
-            // Nullable map values are wrapped in a generated message whose presence encodes
-            // null; a proto MapField cannot hold a null entry, so null CLR values are dropped.
-            return valueRef.IsWrapper
-                ? $"{source}.Where({kvp} => {kvp}.Value is not null).ToMapField({kvp} => {kvp}.Key, {kvp} => {valueExpr})"
-                : $"{source}.ToMapField({kvp} => {kvp}.Key, {kvp} => {valueExpr})";
+            // The wrapper itself is never null. Its optional Value field represents the CLR
+            // null, which preserves every dictionary key as required by the wire contract.
+            return $"{source}.ToMapField({kvp} => {kvp}.Key, {kvp} => {valueExpr})";
         }
 
         if (reference.IsWrapper)
         {
             var inner = reference.WrapperValueReference!;
+            var nonNullSource = inner.ClrType.IsValueType
+                ? $"{source}.Value"
+                : source;
+            var nonNullableInner = inner with { IsNullable = false };
             var innerExpr = BuildClrToProtoExpression(
-                inner, source, lookup, visiting, protoNamespace, clrNullable: inner.IsNullable);
+                nonNullableInner, nonNullSource, lookup, visiting, protoNamespace, clrNullable: false);
+
+            var wrapperType = QualifyProtoType(reference.ProtoTypeName, protoNamespace);
 
             return inner.IsNullable
-                ? $"{source} is null ? null : new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ Value = {innerExpr} }}"
-                : $"new {QualifyProtoType(reference.ProtoTypeName, protoNamespace)} {{ Value = {innerExpr} }}";
+                ? $"{source} is null ? new {wrapperType}() : new {wrapperType} {{ Value = {innerExpr} }}"
+                : $"new {wrapperType} {{ Value = {innerExpr} }}";
         }
 
         if (reference.IsMessage)

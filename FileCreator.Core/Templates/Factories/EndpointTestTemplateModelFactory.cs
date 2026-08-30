@@ -143,7 +143,7 @@ public static class EndpointTestTemplateModelFactory
                         "GetEnumerableAsync",
 
                     _ =>
-                        throw new NotImplementedException()
+                        throw new ArgumentOutOfRangeException(nameof(responseType), responseType, null)
                 },
 
             HttpVerb.DELETE =>

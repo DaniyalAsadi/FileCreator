@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using FileCreator.Core.Projects;
+
 namespace FileCreator;
 
 public sealed class GenerationContext

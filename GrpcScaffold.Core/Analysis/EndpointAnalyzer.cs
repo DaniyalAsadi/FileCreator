@@ -13,8 +13,8 @@ DeleteCurrency: could not infer a response type - skipping. Consider using Endpo
 */
 public sealed class EndpointAnalyzer(AnalysisContext context, VisibilityResolver visibilityResolver, MediatorSendResolver sendResolver)
 {
-    private const string EndpointBaseMetadataName1 = "SharedKernel.Tools.EndpointWithoutRequest";
-    private const string EndpointBaseMetadataName2 = "SharedKernel.Tools.Endpoint<TRequest>";
+    private const string EndpointBaseMetadataName1 = "SharedKernel.Api.EndpointWithoutRequest";
+    private const string EndpointBaseMetadataName2 = "SharedKernel.Api.Endpoint<TRequest>";
 
     /// <summary>
     /// Discovers every Endpoint&lt;TRequest[,TResponse]&gt; subclass in the given compilation.

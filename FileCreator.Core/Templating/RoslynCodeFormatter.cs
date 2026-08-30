@@ -1,4 +1,5 @@
 ﻿// FileCreator.Core/Templating/RoslynCodeFormatter.cs
+using FileCreator.Core.Generation;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
@@ -18,6 +19,20 @@ public static class RoslynCodeFormatter
     public static string Format(string csharpSource)
     {
         var tree = CSharpSyntaxTree.ParseText(csharpSource);
+        var errors = tree.GetDiagnostics()
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToList();
+        if (errors.Count > 0)
+        {
+            throw new GenerationException(new GenerationDiagnostic(
+                GenerationDiagnosticSeverity.Error,
+                "FC1201",
+                "A C# template produced invalid syntax.",
+                Source: nameof(RoslynCodeFormatter),
+                Location: errors[0].Location.GetLineSpan().StartLinePosition.ToString(),
+                SuggestedFix: string.Join(Environment.NewLine, errors.Select(error => error.ToString()))));
+        }
+
         var root = tree.GetRoot();
 
         using var workspace = new AdhocWorkspace();

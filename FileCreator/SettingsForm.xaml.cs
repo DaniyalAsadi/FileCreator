@@ -2,7 +2,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using Microsoft.Win32;
-using Newtonsoft.Json;
+
+using System.Text.Json;
 
 namespace FileCreator;
 
@@ -46,7 +47,7 @@ public partial class SettingsForm : Window
             string solutionFolder = Path.GetDirectoryName(slnPath)!;
             string solutionName = Path.GetFileNameWithoutExtension(slnPath);
             var projects = ExtractProjects(lines, solutionFolder);
-            var projectLines = JsonConvert.SerializeObject(projects);
+            var projectLines = JsonSerializer.Serialize(projects);
             _context.SolutionPath = solutionFolder;
             _context.SolutionName = solutionName;
             _context.ProjectName = "";

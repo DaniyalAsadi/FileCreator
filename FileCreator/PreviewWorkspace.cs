@@ -5,6 +5,8 @@ using Microsoft.CodeAnalysis.Text;
 using System.IO;
 using System.Windows.Media;
 
+using FileCreator.Core.Generation;
+
 namespace FileCreator;
 
 

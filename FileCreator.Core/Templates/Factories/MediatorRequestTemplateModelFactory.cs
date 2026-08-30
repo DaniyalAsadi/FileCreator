@@ -138,7 +138,7 @@ public static class MediatorRequestTemplateModelFactory
                     $"IQuery<{resultTypeName}>",
 
                 _ =>
-                    throw new NotImplementedException()
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
 
@@ -152,7 +152,7 @@ public static class MediatorRequestTemplateModelFactory
                 "IQuery",
 
             _ =>
-                throw new NotImplementedException()
+                throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
     }
 }

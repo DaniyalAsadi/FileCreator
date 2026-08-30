@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
+using FileCreator.Core.Generation;
+
 namespace FileCreator.Grpc.Writers;
 
 public interface IGrpcFileWriter
@@ -12,7 +14,7 @@ public interface IGrpcFileWriter
     IReadOnlyList<WriteResult> Write(IReadOnlyList<GeneratedFile> files, GrpcGenerationOptions options);
 }
 
-public sealed class GrpcFileWriter(GenerationContext context) : IGrpcFileWriter
+public sealed class GrpcFileWriter : IGrpcFileWriter
 {
     public IReadOnlyList<WriteResult> Write(
         IReadOnlyList<GeneratedFile> files,

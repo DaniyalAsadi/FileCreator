@@ -30,6 +30,12 @@ public sealed class MapNullableValueTests
     private const string ContractNamespace = "Bff.Grpc.Map.Contracts";
 
     [Fact]
+    public void Proto_generation_is_byte_stable_across_two_runs()
+    {
+        GenerateProto().Should().Be(GenerateProto());
+    }
+
+    [Fact]
     public void Proto_Never_Contains_Question_Mark()
     {
         var proto = GenerateProto();
@@ -53,7 +59,7 @@ public sealed class MapNullableValueTests
         // `map<string, string>`; it is wrapped in a generated message.
         proto.Should().Contain("map<string, NullableString> metadata");
         proto.Should().Contain("message NullableString {");
-        proto.Should().Contain(" string value = 1;");
+        proto.Should().Contain(" optional string value = 1;");
     }
 
     [Fact]
@@ -75,6 +81,7 @@ public sealed class MapNullableValueTests
         var proto = GenerateProto();
         // DateTime? maps to google.protobuf.Timestamp (a message) which already preserves
         // presence, so it must NOT be wrapped — the null semantic survives natively.
+        proto.Should().Contain("import \"google/protobuf/timestamp.proto\";");
         proto.Should().Contain("map<string, google.protobuf.Timestamp> times");
         // Non-nullable DateTime likewise stays a Timestamp, with conversion applied.
         proto.Should().Contain("map<string, google.protobuf.Timestamp> non_null_times");
@@ -92,16 +99,18 @@ public sealed class MapNullableValueTests
     {
         var mapping = GenerateServerMapping();
         // Non-nullable string map keeps the simple ToMapField().
-        mapping.Should().Contain("result.Tags.ToMapField()");
-        // Nullable string map -> filtered projection into the wrapper message.
-        mapping.Should().Contain("result.Metadata.Where(kvp => kvp.Value is not null).ToMapField(");
+        mapping.Should().Contain("result.Tags.ToMapField(kvp => kvp.Key, kvp => kvp.Value)");
+        // Nullable map entries retain their keys; an empty wrapper represents null.
+        mapping.Should().Contain("result.Metadata.ToMapField(");
+        mapping.Should().NotContain("result.Metadata.Where(");
+        mapping.Should().Contain("kvp.Value is null ? new global::Demo.Web.Grpc.Protos.MapService.NullableString()");
         mapping.Should().Contain("NullableString { Value = kvp.Value }");
         // int? -> wrapper with the inner scalar conversion.
         mapping.Should().Contain("NullableInt32 { Value = kvp.Value.Value }");
         // Guid? -> wrapper with .ToString() on the inner value.
         mapping.Should().Contain("NullableString { Value = kvp.Value.Value.ToString() }");
         // enum? -> wrapper with the inner enum cast.
-        mapping.Should().Contain("NullableUserKind { Value = kvp.Value is null ? default : (Demo.Contracts.UserKind)kvp.Value.Value }");
+        mapping.Should().Contain("NullableUserKind { Value = (global::Demo.Web.Grpc.Protos.MapService.UserKind)kvp.Value.Value }");
         // DateTime (non-nullable) -> Timestamp conversion applied through the map.
         mapping.Should().Contain("Timestamp.FromDateTime(kvp.Value.ToUniversalTime())");
     }
@@ -110,8 +119,9 @@ public sealed class MapNullableValueTests
     public void Client_MapToGrpc_Wraps_Nullable_Values_ClrToProto()
     {
         var mapping = GenerateClientMapping();
-        mapping.Should().Contain("request.Tags.ToMapField()");
-        mapping.Should().Contain("request.Metadata.Where(kvp => kvp.Value is not null).ToMapField(");
+        mapping.Should().Contain("request.Tags.ToMapField(kvp => kvp.Key, kvp => kvp.Value)");
+        mapping.Should().Contain("request.Metadata.ToMapField(");
+        mapping.Should().NotContain("request.Metadata.Where(");
         mapping.Should().Contain("NullableString { Value = kvp.Value }");
         mapping.Should().Contain("NullableInt32 { Value = kvp.Value.Value }");
     }
@@ -123,11 +133,11 @@ public sealed class MapNullableValueTests
         // Non-nullable string map: trivial passthrough value.
         mapping.Should().Contain("response.Tags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)");
         // Nullable string map: read through the wrapper's `value` field.
-        mapping.Should().Contain("response.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value)");
+        mapping.Should().Contain("response.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.HasValue ? kvp.Value.Value : null)");
         // Guid? -> Guid.Parse on the unwrapped value.
-        mapping.Should().Contain("Guid.Parse(kvp.Value.Value)");
+        mapping.Should().Contain("kvp.Value.HasValue ? Guid.Parse(kvp.Value.Value) : (System.Guid?)null");
         // enum? -> cast on the unwrapped value.
-        mapping.Should().Contain("(Demo.Contracts.UserKind)kvp.Value.Value");
+        mapping.Should().Contain("(global::Bff.Grpc.Map.Contracts.UserKind)kvp.Value.Value");
         // DateTime -> ToDateTime on the Timestamp value.
         mapping.Should().Contain("kvp.Value.ToDateTime()");
     }
@@ -136,7 +146,7 @@ public sealed class MapNullableValueTests
     // generation helpers
     // ------------------------------------------------------------------
 
-    private static string GenerateProto()
+    internal static string GenerateProto()
     {
         var endpoint = CreateEndpointModel();
         return new ProtoGenerator(new TemplateEngine()).Generate(

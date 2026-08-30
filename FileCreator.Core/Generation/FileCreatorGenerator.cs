@@ -1,47 +1,39 @@
 ﻿using FileCreator.Core;
-using FileCreator.Core.DependencyInjection;
+using FileCreator.Core.Generation;
 using FileCreator.Core.Generators;
 using FileCreator.Core.Templates.Factories;
-using Microsoft.Extensions.DependencyInjection;
 using System.IO;
-using System.Text;
 
-namespace FileCreator.FileCreatorService;
+namespace FileCreator.Core.Generation;
 
-public sealed class RoslynFileCreator(
-    string projectName,
-    GroupName groupName,
-    string usecaseName,
-    string useCasePath,
-    string webPath,
-    string functionalTestPath,
-    string unitTestPath,
-    string infrastructurePath,
-    bool hasRequest,
-    RequestType requestType,
-    bool hasResponse,
-    ResponseType responseType,
-    HttpVerb httpVerb)
+public sealed class FileCreatorGenerator(
+    FileCreatorGenerationRequest request,
+    ScribanFileCreator fileCreator)
 {
-    public string ProjectName { get; } = projectName;
-    public GroupName GroupName { get; } = groupName;
-    public string UsecaseName { get; } = usecaseName;
-    public string UseCasePath { get; } = useCasePath;
-    public string InfrastructurePath { get; } = infrastructurePath;
-    public string WebPath { get; } = webPath;
-    public string FunctionalTestPath { get; } = functionalTestPath;
-    public string UnitTestPath { get; } = unitTestPath;
-    public bool HasRequest { get; } = hasRequest;
-    public RequestType RequestType { get; } = requestType;
-    public bool HasResponse { get; } = hasResponse;
-    public ResponseType ResponseType { get; } = responseType;
-    public HttpVerb HttpVerb { get; } = httpVerb;
+    public string ProjectName => request.ProjectName;
+    public GroupName GroupName => request.GroupName;
+    public string UsecaseName => request.UseCaseName;
+    public string UseCasePath => request.UseCasesPath;
+    public string InfrastructurePath => request.InfrastructurePath;
+    public string WebPath => request.WebPath;
+    public string FunctionalTestPath => request.FunctionalTestsPath;
+    public string UnitTestPath => request.UnitTestsPath;
+    public bool HasRequest => request.HasRequest;
+    public RequestType RequestType => request.RequestType;
+    public bool HasResponse => request.HasResponse;
+    public ResponseType ResponseType => request.ResponseType;
+    public HttpVerb HttpVerb => request.HttpVerb;
 
     // ------------------------
     // Generate Preview (no File IO)
     // ------------------------
     public async Task<IReadOnlyList<GeneratedFile>> GeneratePreview()
     {
+        var diagnostic = request.Validate().FirstOrDefault(item =>
+            item.Severity == GenerationDiagnosticSeverity.Error);
+        if (diagnostic is not null)
+            throw new GenerationException(diagnostic);
+
         var files = new List<GeneratedFile>();
 
         string useCasePath = Path.Combine(
@@ -77,9 +69,6 @@ public sealed class RoslynFileCreator(
         string functionalNamespace = $"{ProjectName}.FunctionalTests.ApiEndpoints.{GroupName.Resource}";
         string unitTestNamespace = $"{ProjectName}.UnitTests.UseCases.{GroupName.Feature}";
         string infrastructureNamespace = $"{ProjectName}.Infrastructure.Data.Queries.{GroupName.Feature}";
-
-        var services = new ServiceCollection().AddScribanCodeGeneration().BuildServiceProvider();
-        var fileCreator = services.GetRequiredService<ScribanFileCreator>();
 
         //// ------------------------ MediatorRequest ------------------------
         #region Request
@@ -249,22 +238,8 @@ public sealed class RoslynFileCreator(
                 responseType: ResponseType))
         ));
 
-        return files;
-    }
-
-    // ------------------------
-    // Optional: Write to disk
-    // ------------------------
-    public static void WriteFiles(IEnumerable<GeneratedFile> files)
-    {
-        foreach (var file in files)
-        {
-            var dir = Path.GetDirectoryName(file.AbsolutePath)!;
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-
-            if (!File.Exists(file.AbsolutePath))
-                File.WriteAllText(file.AbsolutePath, file.Content, Encoding.UTF8);
-        }
+        return files
+            .OrderBy(file => file.AbsolutePath, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

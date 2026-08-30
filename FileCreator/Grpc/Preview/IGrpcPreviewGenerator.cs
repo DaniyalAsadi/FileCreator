@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
+using FileCreator.Core.Generation;
+
 namespace FileCreator.Grpc.Preview;
 
 public interface IGrpcPreviewGenerator
@@ -20,11 +22,17 @@ public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGr
         
         var files = new List<GeneratedFile>();
 
-        foreach (var group in endpoints.GroupBy(e => e.ServiceName))
+        foreach (var group in endpoints
+            .GroupBy(e => e.ServiceName)
+            .OrderBy(group => group.Key, StringComparer.Ordinal))
         {
+            var orderedEndpoints = group
+                .OrderBy(endpoint => endpoint.EndpointClassName, StringComparer.Ordinal)
+                .ToList();
+
             files.AddRange(codeGenerator.GenerateForServiceGroup(
-                group.Key, [.. group]));
-            foreach (var endpoint in group.ToList())
+                group.Key, orderedEndpoints));
+            foreach (var endpoint in orderedEndpoints)
             {
                 files.AddRange(codeGenerator.GenerateContracts(endpoint, group.Key));
                 files.AddRange(codeGenerator.GenerateMapping(endpoint, group.Key));
@@ -33,6 +41,8 @@ public sealed class GrpcPreviewGenerator(IGrpcCodeGenerator codeGenerator) : IGr
 
         files.AddRange(codeGenerator.GenerateDiRegistration(endpoints.Select(e => e.ServiceName).Distinct()));
 
-        return files;
+        return files
+            .OrderBy(file => file.AbsolutePath, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

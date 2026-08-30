@@ -1,4 +1,6 @@
 using System.Windows;
+using FileCreator.Core.DependencyInjection;
+using FileCreator.Core.Generation;
 using FileCreator.Grpc.DependencyInjection;
 using FileCreator.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,8 @@ public partial class App : Application
         var services = new ServiceCollection();
 
         services.AddSingleton<IWorkspaceCache, WorkspaceCacheService>();
+        services.AddScribanCodeGeneration();
+        services.AddSingleton<GeneratedFileWriter>();
 
         services.AddGrpcScaffoldServices();
 

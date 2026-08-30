@@ -30,7 +30,7 @@ public sealed class ScribanTemplateRenderer(IScribanTemplateSource templateSourc
         {
             MemberRenamer = StandardMemberRenamer.Rename,
             LoopLimit = 100_000,
-            StrictVariables = false
+            StrictVariables = true
         };
         context.PushGlobal(scriptObject);
 
