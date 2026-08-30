@@ -20,13 +20,16 @@ public sealed record GrpcGenerationResult(
     GrpcGenerationOptions Options);
 
 public sealed class GrpcGenerationCoordinator(
-    IEndpointDiscoveryService discovery,
     IGrpcPreviewGenerator previewGenerator,
     IGrpcFileWriter writer,
     GenerationContext context)
 {
-    public async Task<GrpcGenerationResult> PrepareAsync(GrpcGenerationOptions options)
+    public GrpcGenerationResult Prepare(
+        GrpcGenerationOptions options,
+        IReadOnlyCollection<EndpointModel> discoveredEndpoints)
     {
+        ArgumentNullException.ThrowIfNull(discoveredEndpoints);
+
         var validationErrors = options.Validate();
         if (validationErrors.Count > 0)
             throw new InvalidOperationException(string.Join(Environment.NewLine, validationErrors));
@@ -35,7 +38,7 @@ public sealed class GrpcGenerationCoordinator(
         ValidateOutputPath(context.Paths.BffBasePath, "BffBasePath");
 
 
-        ImmutableArray<EndpointModel> endpoints = await discovery.DiscoverAsync(options);
+        ImmutableArray<EndpointModel> endpoints = [.. discoveredEndpoints];
 
         if (endpoints.IsEmpty)
             throw new InvalidOperationException("هیچ Endpoint منطبقی پیدا نشد.");

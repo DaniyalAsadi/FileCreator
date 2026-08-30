@@ -1,42 +1,107 @@
-﻿using System.IO;
+using System.IO;
+using FileCreator.Core.Loading;
 
 namespace FileCreator;
 
 public interface IWorkspaceCache
 {
-    PreviewWorkspace GetWorkspace();
-}
-public sealed class WorkspaceCacheService : IWorkspaceCache
-{
-    public PreviewWorkspace GetWorkspace()
-    {
-        var path = Properties.Settings.Default.SolutionPath;
+    bool IsLoaded { get; }
 
-        if (string.IsNullOrWhiteSpace(path))
-            throw new InvalidOperationException("Solution path is not configured.");
+    PreviewWorkspace Current { get; }
 
-        if (!File.Exists(path))
-            throw new FileNotFoundException(path);
-
-        return WorkspaceCache.GetWorkspace(path);
-    }
+    Task<PreviewWorkspace> LoadAsync(
+        string solutionPath,
+        IProgress<LoadingProgress>? progress = null,
+        CancellationToken cancellationToken = default);
 }
 
-
-public static class WorkspaceCache
+public sealed class WorkspaceCacheService : IWorkspaceCache, IDisposable
 {
-    private static PreviewWorkspace? _workspace;
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
+    private readonly object _gate = new();
+    private PreviewWorkspace? _workspace;
+    private string? _solutionPath;
+    private bool _disposed;
 
-    public static PreviewWorkspace GetWorkspace(string slnPath)
+    public bool IsLoaded
     {
-        _workspace ??= new PreviewWorkspace(slnPath);
-
-        return _workspace;
+        get
+        {
+            lock (_gate)
+                return _workspace is not null;
+        }
     }
 
-    public static void Dispose()
+    public PreviewWorkspace Current
     {
-        _workspace?.Dispose();
-        _workspace = null;
+        get
+        {
+            lock (_gate)
+                return _workspace
+                    ?? throw new InvalidOperationException("The solution workspace has not been loaded.");
+        }
+    }
+
+    public async Task<PreviewWorkspace> LoadAsync(
+        string solutionPath,
+        IProgress<LoadingProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
+
+        var fullPath = Path.GetFullPath(solutionPath);
+        await _loadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            lock (_gate)
+            {
+                if (_workspace is not null &&
+                    string.Equals(_solutionPath, fullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    progress?.Report(new LoadingProgress(100, "Completed", Path.GetFileName(fullPath)));
+                    return _workspace;
+                }
+            }
+
+            var loaded = await PreviewWorkspace.LoadAsync(
+                    fullPath,
+                    progress,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            PreviewWorkspace? previous;
+            lock (_gate)
+            {
+                previous = _workspace;
+                _workspace = loaded;
+                _solutionPath = fullPath;
+            }
+
+            previous?.Dispose();
+            return loaded;
+        }
+        finally
+        {
+            _loadGate.Release();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        lock (_gate)
+        {
+            _workspace?.Dispose();
+            _workspace = null;
+            _solutionPath = null;
+        }
+
+        _loadGate.Dispose();
     }
 }

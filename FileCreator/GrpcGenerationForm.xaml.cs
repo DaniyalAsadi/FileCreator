@@ -1,10 +1,14 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using FileCreator.Core.Loading;
 using FileCreator.Grpc.Coordination;
 using FileCreator.Grpc.Discovery;
 using FileCreator.Grpc.ViewModels;
 using GrpcScaffold.Core.IO;
+using GrpcScaffold.Core.Analysis.Models;
+using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace FileCreator;
 
@@ -22,6 +26,9 @@ public partial class GrpcGenerationForm : Window
     private List<EndpointSelectionItem> _allEndpoints = [];
 
     private List<string> _allGroups = [];
+    private ImmutableArray<EndpointModel> _discoveredEndpoints = [];
+    private readonly LoadingOperation<ImmutableArray<EndpointModel>> _endpointLoading = new();
+    private CancellationTokenSource? _endpointLoadCancellation;
 
     public GrpcGenerationForm(
         GrpcGenerationCoordinator coordinator,
@@ -35,11 +42,13 @@ public partial class GrpcGenerationForm : Window
         _context = context;
         InitializeComponent();
 
-        Loaded += OnLoaded;
+        ContentRendered += OnContentRendered;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnContentRendered(object? sender, EventArgs e)
     {
+        ContentRendered -= OnContentRendered;
+
         if (_context.Paths is null || string.IsNullOrWhiteSpace(_context.ProjectName))
         {
             MessageBox.Show("لطفاً ابتدا تنظیمات پروژه را در فرم اصلی بارگذاری کنید.");
@@ -58,15 +67,22 @@ public partial class GrpcGenerationForm : Window
 
     private async Task LoadEndpointsAsync()
     {
+        _endpointLoadCancellation?.Dispose();
+        _endpointLoadCancellation = new CancellationTokenSource();
+        var cancellationToken = _endpointLoadCancellation.Token;
+        var progress = new Progress<LoadingProgress>(UpdateLoadingUi);
+
         try
         {
-            Mouse.OverrideCursor = Cursors.Wait;
+            BeginLoading();
 
             var options = BuildOptionsFromForm();
-            var workspace = _workspaceCache.GetWorkspace();
+            var endpoints = await _endpointLoading.RunAsync(
+                (reporter, token) => _endpointDiscovery.DiscoverAsync(options, reporter, token),
+                progress,
+                cancellationToken);
 
-            var endpoints =
-                await _endpointDiscovery.DiscoverAsync(options);
+            _discoveredEndpoints = endpoints;
 
             SetEndpoints([.. endpoints
                 .Select(EndpointSelectionItem.Map)]);
@@ -78,8 +94,18 @@ public partial class GrpcGenerationForm : Window
             cmbGroupName.ItemsSource = _allGroups.ToList();
             cmbGroupName.SelectedIndex = 0;
         }
+        catch (OperationCanceledException)
+        {
+            MessageBox.Show(
+                "Endpoint discovery was cancelled.",
+                "Loading Cancelled",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            Close();
+        }
         catch (Exception ex)
         {
+            Trace.TraceError("gRPC endpoint discovery failed: {0}", ex);
             MessageBox.Show(
                 ex.Message,
                 "Endpoint Discovery Error",
@@ -88,11 +114,45 @@ public partial class GrpcGenerationForm : Window
         }
         finally
         {
-            Mouse.OverrideCursor = null;
+            EndLoading();
+            _endpointLoadCancellation?.Dispose();
+            _endpointLoadCancellation = null;
         }
     }
 
-    private async void BtnGenerateGrpc_Click(object sender, RoutedEventArgs e)
+    private void BeginLoading()
+    {
+        grpcContent.IsEnabled = false;
+        loadingOverlay.Visibility = Visibility.Visible;
+        btnCancelLoading.IsEnabled = true;
+        UpdateLoadingUi(new LoadingProgress(0, "Preparing endpoint discovery"));
+    }
+
+    private void EndLoading()
+    {
+        loadingOverlay.Visibility = Visibility.Collapsed;
+        grpcContent.IsEnabled = true;
+    }
+
+    private void UpdateLoadingUi(LoadingProgress progress)
+    {
+        loadingProgressBar.Value = progress.Percentage;
+        loadingPercentageText.Text = $"{progress.Percentage}%";
+        loadingStageText.Text = progress.Stage;
+        loadingDetailText.Text = progress.Detail ?? string.Empty;
+        loadingDetailText.Visibility = string.IsNullOrWhiteSpace(progress.Detail)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private void BtnCancelLoading_Click(object sender, RoutedEventArgs e)
+    {
+        btnCancelLoading.IsEnabled = false;
+        loadingStageText.Text = "Cancelling...";
+        _endpointLoadCancellation?.Cancel();
+    }
+
+    private void BtnGenerateGrpc_Click(object sender, RoutedEventArgs e)
     {
         dgvEndpoints.CommitEdit(DataGridEditingUnit.Row, true);
 
@@ -110,7 +170,7 @@ public partial class GrpcGenerationForm : Window
         {
             btnGenerateGrpc.IsEnabled = false;
 
-            result = await _coordinator.PrepareAsync(options);
+            result = _coordinator.Prepare(options, _discoveredEndpoints);
         }
         catch (InvalidOperationException ex)
         {
@@ -127,7 +187,7 @@ public partial class GrpcGenerationForm : Window
             btnGenerateGrpc.IsEnabled = true;
         }
 
-        var workspace = _workspaceCache.GetWorkspace();
+        var workspace = _workspaceCache.Current;
 
         var preview = new PreviewForm(workspace, result.Files) { Owner = this };
 
@@ -141,6 +201,8 @@ public partial class GrpcGenerationForm : Window
 
     private GrpcGenerationOptions BuildOptionsFromForm()
     {
+        var endpointFilter = txtEndpointFilter.Text.Trim();
+
         return new()
         {
             ProjectName = _context.ProjectName,
@@ -150,8 +212,9 @@ public partial class GrpcGenerationForm : Window
             GenerateAll =
                 chkGenerateAll.IsChecked == true,
 
-            EndpointFilter =
-                $"*{txtEndpointFilter.Text.Trim()}*",
+            EndpointFilter = string.IsNullOrWhiteSpace(endpointFilter)
+                ? null
+                : $"*{endpointFilter}*",
 
             InternalOnly =
                 chkInternalOnly.IsChecked == true,

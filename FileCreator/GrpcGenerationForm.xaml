@@ -11,7 +11,8 @@
         FontFamily="Segoe UI"
         FontSize="13">
 
-    <Grid Margin="24">
+    <Grid>
+      <Grid x:Name="grpcContent" Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="14" />
@@ -91,5 +92,67 @@
                 Content="Generate gRPC"
                 Background="#007ACC" Foreground="White" BorderThickness="0"
                 Click="BtnGenerateGrpc_Click" />
+      </Grid>
+
+      <Grid x:Name="loadingOverlay"
+            Visibility="Collapsed"
+            Background="#D91E1E1E">
+        <Border Width="440"
+                Padding="28"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#2D2D30"
+                BorderBrush="#3F3F46"
+                BorderThickness="1"
+                CornerRadius="8">
+          <StackPanel>
+            <TextBlock Text="Loading gRPC project..."
+                       HorizontalAlignment="Center"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="White"
+                       Margin="0,0,0,20" />
+
+            <Grid>
+              <ProgressBar x:Name="loadingProgressBar"
+                           Height="22"
+                           Minimum="0"
+                           Maximum="100"
+                           Value="0" />
+              <TextBlock x:Name="loadingPercentageText"
+                         Text="0%"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         FontWeight="SemiBold"
+                         Foreground="White" />
+            </Grid>
+
+            <TextBlock x:Name="loadingStageText"
+                       Text="Preparing endpoint discovery"
+                       HorizontalAlignment="Center"
+                       Margin="0,18,0,6"
+                       FontSize="15"
+                       Foreground="Gainsboro" />
+
+            <TextBlock x:Name="loadingDetailText"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       Foreground="#B8B8B8"
+                       MaxWidth="380"
+                       Margin="0,0,0,18" />
+
+            <Button x:Name="btnCancelLoading"
+                    Content="Cancel"
+                    Width="110"
+                    Height="34"
+                    HorizontalAlignment="Center"
+                    Background="#3F3F46"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Click="BtnCancelLoading_Click" />
+          </StackPanel>
+        </Border>
+      </Grid>
     </Grid>
 </Window>

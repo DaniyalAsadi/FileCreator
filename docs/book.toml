@@ -1,0 +1,9 @@
+[book]
+title = "FileCreator Engineering Guide"
+authors = ["FileCreator maintainers"]
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"

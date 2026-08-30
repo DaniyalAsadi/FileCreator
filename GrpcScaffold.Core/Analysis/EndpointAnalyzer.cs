@@ -21,13 +21,16 @@ public sealed class EndpointAnalyzer(AnalysisContext context, VisibilityResolver
     /// </summary>
     public async Task<ImmutableArray<EndpointModel>> DiscoverAsync(
         Compilation compilation,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IProgress<EndpointAnalysisProgress>? progress = null)
     {
         var results = ImmutableArray.CreateBuilder<EndpointModel>();
+        var syntaxTrees = compilation.SyntaxTrees.ToArray();
 
-        foreach (var tree in compilation.SyntaxTrees)
+        for (var treeIndex = 0; treeIndex < syntaxTrees.Length; treeIndex++)
         {
             ct.ThrowIfCancellationRequested();
+            var tree = syntaxTrees[treeIndex];
             var semanticModel = compilation.GetSemanticModel(tree);
             var root = await tree.GetRootAsync(ct);
 
@@ -58,6 +61,11 @@ public sealed class EndpointAnalyzer(AnalysisContext context, VisibilityResolver
                 if (model is not null)
                     results.Add(model);
             }
+
+            progress?.Report(new EndpointAnalysisProgress(
+                treeIndex + 1,
+                syntaxTrees.Length,
+                tree.FilePath));
         }
 
         return results.ToImmutable();

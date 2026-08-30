@@ -9,6 +9,6 @@ public sealed record ProjectPaths(
     string SharedKernelTestsBasePath = "",
     string InfrastructureBasePath = "",
     string LocalizationBasePath = "",
-    string SharedKernelToolsTestsBasePath = "",
+    //string SharedKernelToolsTestsBasePath = "",
     string BffBasePath = "",
     string PresentationBasePath = "");

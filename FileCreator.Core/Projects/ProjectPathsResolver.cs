@@ -39,7 +39,7 @@ public static class ProjectPathsResolver
             ResolveProjectDirectory("SharedKernel"),
             ResolveProjectDirectory($"{projectName}.Infrastructure"),
             ResolveProjectDirectory("Localization"),
-            ResolveProjectDirectory("SharedKernel.Tools"),
+            //ResolveProjectDirectory("SharedKernel.Tools"),
             ResolveProjectDirectory("Presentation.Bff"),
             ResolveProjectDirectory("Presentation"));
     }

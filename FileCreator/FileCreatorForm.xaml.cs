@@ -5,6 +5,8 @@ using System.Windows.Input;
 using FileCreator.Core;
 using FileCreator.Core.Generation;
 using FileCreator.Core.Generators;
+using FileCreator.Core.Loading;
+using FileCreator.Core.Projects;
 using FileCreator.Core.Rewriter;
 using FileCreator.Core.Walker;
 using FileCreator.Services;
@@ -12,6 +14,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 namespace FileCreator;
 
@@ -27,6 +30,8 @@ public partial class FileCreatorForm : Window
     private readonly GenerationContext _context;
     private readonly ScribanFileCreator _fileCreator;
     private readonly GeneratedFileWriter _fileWriter;
+    private readonly LoadingOperation<PreviewWorkspace> _workspaceLoading = new();
+    private CancellationTokenSource? _workspaceLoadCancellation;
 
     public FileCreatorForm(
         IServiceProvider serviceProvider,
@@ -48,51 +53,127 @@ public partial class FileCreatorForm : Window
         SetDefaultValue();
         LoadSettings(GetSelectedText(cmbProjectName));
 
-        Loaded += OnLoaded;
+        ContentRendered += OnContentRendered;
     }
 
     // ----------------------------------------------------
     // Workspace Initialization (ONLY ONCE)
     // ----------------------------------------------------
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnContentRendered(object? sender, EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_slnPath))
-        {
-            MessageBox.Show("Please set the solution path in settings.");
-            return;
-        }
-        try
-        {
-            Mouse.OverrideCursor = Cursors.Wait;
-            _workspace = _cache.GetWorkspace();
+        ContentRendered -= OnContentRendered;
+        await LoadWorkspaceAsync();
+    }
 
-            await _workspace.WarmupAsync();
-        }
-        catch (Exception ex)
+    private async Task LoadWorkspaceAsync()
+    {
+        while (true)
         {
-            MessageBox.Show(
-                $"The solution workspace could not be loaded: {ex.Message}",
-                "Workspace Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            var settings = _serviceProvider.GetRequiredService<SettingsForm>();
-            settings.Owner = this;
-
-            if (settings.ShowDialog() == true)
+            if (string.IsNullOrWhiteSpace(_slnPath))
             {
-                _workspace = _cache.GetWorkspace();
-                await _workspace.WarmupAsync();
+                //SetProjectCommandsEnabled(false);
+                SetProjectCommandsEnabled();
+                if (!ShowSettingsDialog())
+                    return;
+
+                LoadSettings(GetSelectedText(cmbProjectName));
+                continue;
             }
-            else
+
+            _workspaceLoadCancellation?.Dispose();
+            _workspaceLoadCancellation = new CancellationTokenSource();
+            var cancellationToken = _workspaceLoadCancellation.Token;
+            var progress = new Progress<LoadingProgress>(UpdateLoadingUi);
+
+            BeginLoading();
+
+            try
             {
-                Close();
+                _workspace = await _workspaceLoading.RunAsync(
+                    (reporter, token) => _cache.LoadAsync(_slnPath, reporter, token),
+                    progress,
+                    cancellationToken);
+
+                EndLoading();
+                //SetProjectCommandsEnabled(true);
+                SetProjectCommandsEnabled();
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                EndLoading();
+                //SetProjectCommandsEnabled();
+                MessageBox.Show(
+                    "Project loading was cancelled.",
+                    "Loading Cancelled",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("Solution workspace load failed: {0}", ex);
+                EndLoading();
+                //SetProjectCommandsEnabled(false);
+                SetProjectCommandsEnabled();
+
+                MessageBox.Show(
+                    $"The solution workspace could not be loaded: {ex.Message}",
+                    "Workspace Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                if (!ShowSettingsDialog())
+                    return;
+
+                LoadSettings(GetSelectedText(cmbProjectName));
+            }
+            finally
+            {
+                _workspaceLoadCancellation?.Dispose();
+                _workspaceLoadCancellation = null;
             }
         }
-        finally
-        {
-            Mouse.OverrideCursor = null;
-        }
+    }
+
+    private bool ShowSettingsDialog()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var settings = scope.ServiceProvider.GetRequiredService<SettingsForm>();
+        settings.Owner = this;
+        return settings.ShowDialog() == true;
+    }
+
+    private void BeginLoading()
+    {
+        projectContent.IsEnabled = false;
+        loadingOverlay.Visibility = Visibility.Visible;
+        btnCancelLoading.IsEnabled = true;
+        UpdateLoadingUi(new LoadingProgress(0, "Initializing"));
+    }
+
+    private void EndLoading()
+    {
+        loadingOverlay.Visibility = Visibility.Collapsed;
+        projectContent.IsEnabled = true;
+    }
+
+    private void UpdateLoadingUi(LoadingProgress progress)
+    {
+        loadingProgressBar.Value = progress.Percentage;
+        loadingPercentageText.Text = $"{progress.Percentage}%";
+        loadingStageText.Text = progress.Stage;
+        loadingDetailText.Text = progress.Detail ?? string.Empty;
+        loadingDetailText.Visibility = string.IsNullOrWhiteSpace(progress.Detail)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private void BtnCancelLoading_Click(object sender, RoutedEventArgs e)
+    {
+        btnCancelLoading.IsEnabled = false;
+        loadingStageText.Text = "Cancelling...";
+        _workspaceLoadCancellation?.Cancel();
     }
 
     // ----------------------------------------------------
@@ -107,33 +188,20 @@ public partial class FileCreatorForm : Window
         _context.SolutionPath = _slnPath;
         _context.SolutionName = _solutionName;
 
-        // همه‌ی مسیرها یک‌جا resolve می‌شن و در GenerationContext می‌شینن
-        _context.Paths = _pathsProvider.Load(projectName, _slnPath);
+        _context.Paths = string.IsNullOrWhiteSpace(projectName) || string.IsNullOrWhiteSpace(_slnPath)
+            ? new ProjectPaths()
+            : _pathsProvider.Load(projectName, _slnPath);
 
-        btnGenerate.IsEnabled =
-            !string.IsNullOrWhiteSpace(_context.SolutionPath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.UseCasesBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.WebBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.FunctionalTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.UnitTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.SharedKernelTestsBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.InfrastructureBasePath) &&
-            !string.IsNullOrWhiteSpace(_context.Paths.LocalizationBasePath) &&
-            !string.IsNullOrEmpty(_context.Paths.SharedKernelToolsTestsBasePath);
+        //SetProjectCommandsEnabled(false);
+        SetProjectCommandsEnabled();
     }
 
-    private void BtnSettings_Click(object sender, RoutedEventArgs e)
+    private async void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
-        using var scope = _serviceProvider.CreateScope();
-
-        var frm = scope.ServiceProvider.GetRequiredService<SettingsForm>();
-        frm.Owner = this;
-
-        if (frm.ShowDialog() == true)
+        if (ShowSettingsDialog())
         {
             LoadSettings(GetSelectedText(cmbProjectName));
-
-            _workspace = _cache.GetWorkspace();
+            await LoadWorkspaceAsync();
         }
     }
 
@@ -246,7 +314,7 @@ public partial class FileCreatorForm : Window
             // 4️⃣ Write to Disk
             _fileWriter.Write(previewFiles, GeneratedFileWritePolicy.CreateOnly);
 
-            var apiRoutePath = FindApiRoutes(_context.Paths.SharedKernelToolsTestsBasePath);
+            var apiRoutePath = FindApiRoutes(_context.Paths.SharedKernelTestsBasePath);
             ApiRoutesUpdater.Update(
                 apiRoutePath,
                 _projectName,
@@ -503,9 +571,28 @@ public partial class FileCreatorForm : Window
             {
                 button.Background = System.Windows.Media.Brushes.LightGray;
                 button.Foreground = System.Windows.Media.Brushes.DarkGray;
-                MessageBox.Show("Solution path is not configured.", "sln Path Required", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+    }
+
+    private void SetProjectCommandsEnabled()
+    {
+        var pathsReady =
+            !string.IsNullOrWhiteSpace(_context.SolutionPath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.UseCasesBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.WebBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.FunctionalTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.UnitTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.SharedKernelTestsBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.InfrastructureBasePath) &&
+            !string.IsNullOrWhiteSpace(_context.Paths.LocalizationBasePath);
+        //&& !string.IsNullOrWhiteSpace(_context.Paths.SharedKernelToolsTestsBasePath);
+        bool workspaceReady = _cache.IsLoaded;
+        var enabled = workspaceReady && pathsReady;
+        btnGenerate.IsEnabled = enabled;
+        menuGrpcGeneration.IsEnabled = enabled;
+        menuUpdateEnums.IsEnabled = enabled;
+        menuUpdateResx.IsEnabled = enabled;
     }
 
     private static void SelectComboItem(ComboBox combo, string text)

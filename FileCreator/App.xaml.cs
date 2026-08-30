@@ -39,7 +39,6 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        WorkspaceCache.Dispose();
         (_serviceProvider as IDisposable)?.Dispose();
         base.OnExit(e);
     }
